@@ -2,6 +2,7 @@ package com.example.aiupscaler.ui.main
 
 import android.content.ContentValues
 import android.content.Intent
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
@@ -13,17 +14,19 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.FileProvider
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.example.aiupscaler.R
 import com.example.aiupscaler.databinding.ActivityMainBinding
-import com.example.aiupscaler.ml.Backend
+import com.example.aiupscaler.ml.engine.Backend
 import com.example.aiupscaler.util.SystemMonitor
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
 
 class MainActivity : AppCompatActivity() {
 
@@ -60,10 +63,8 @@ class MainActivity : AppCompatActivity() {
     private fun setupListeners() {
         binding.btnPick.setOnClickListener { pick.launch("image/*") }
         binding.btnUpscale.setOnClickListener {
-            if (vm.state.value.source == null)
-                toast("Pilih gambar dulu")
-            else
-                vm.upscale()
+            if (vm.state.value.source == null) toast("Pilih gambar dulu")
+            else vm.upscale()
         }
         binding.btnSave.setOnClickListener { saveResult() }
         binding.btnShare.setOnClickListener { shareResult() }
@@ -119,7 +120,7 @@ class MainActivity : AppCompatActivity() {
                     binding.toggleBackend.isEnabled = !s.processing
                     binding.chipBackend.text = s.backend.label
 
-                    binding.tvLog.text = s.log.takeLast(8).joinToString("\n")
+                    binding.tvLog.text = s.log.takeLast(12).joinToString("\n")
                 }
             }
         }
@@ -160,7 +161,7 @@ class MainActivity : AppCompatActivity() {
                 val uri = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
                 uri?.let {
                     contentResolver.openOutputStream(it)?.use { os ->
-                        bmp.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, os)
+                        bmp.compress(Bitmap.CompressFormat.PNG, 100, os)
                     }
                     withContext(Dispatchers.Main) {
                         Snackbar.make(binding.root, getString(R.string.saved_success), Snackbar.LENGTH_LONG).show()
@@ -176,13 +177,9 @@ class MainActivity : AppCompatActivity() {
         val bmp = vm.state.value.result ?: return
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                val path = java.io.File(cacheDir, "share_${System.currentTimeMillis()}.png")
-                path.outputStream().use { bmp.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it) }
-                val uri = androidx.core.content.FileProvider.getUriForFile(
-                    this@MainActivity,
-                    "$packageName.fileprovider",
-                    path
-                )
+                val path = File(cacheDir, "share_${System.currentTimeMillis()}.png")
+                path.outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
+                val uri = FileProvider.getUriForFile(this@MainActivity, "$packageName.fileprovider", path)
                 withContext(Dispatchers.Main) {
                     val intent = Intent(Intent.ACTION_SEND).apply {
                         type = "image/png"

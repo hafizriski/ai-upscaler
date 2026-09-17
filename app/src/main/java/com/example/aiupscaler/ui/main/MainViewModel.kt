@@ -2,13 +2,16 @@ package com.example.aiupscaler.ui.main
 
 import android.app.Application
 import android.graphics.Bitmap
-import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.aiupscaler.data.repository.UpscaleRepository
-import com.example.aiupscaler.ml.Backend
-import com.example.aiupscaler.ml.ProgressInfo
-import com.example.aiupscaler.ml.ProgressListener
+import com.example.aiupscaler.core.di.ServiceLocator
+import com.example.aiupscaler.core.result.AppResult
+import com.example.aiupscaler.core.telemetry.Telemetry
+import com.example.aiupscaler.domain.model.ProgressEvent
+import com.example.aiupscaler.domain.model.UpscaleRequest
+import com.example.aiupscaler.domain.model.UpscaleResult
+import com.example.aiupscaler.domain.usecase.UpscaleImageUseCase
+import com.example.aiupscaler.ml.engine.Backend
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -28,17 +31,23 @@ data class MainUiState(
     val info: String = "Pilih gambar untuk memulai",
     val log: List<String> = emptyList(),
     val processing: Boolean = false,
-    val modelAvailable: Boolean = true
+    val modelAvailable: Boolean = true,
+    val usedFallback: Boolean = false
 )
 
 class MainViewModel(app: Application) : AndroidViewModel(app) {
 
-    private val repo = UpscaleRepository(app)
+    private val useCase: UpscaleImageUseCase = ServiceLocator.provideUpscaleUseCase()
+
     private val _state = MutableStateFlow(MainUiState())
     val state: StateFlow<MainUiState> = _state.asStateFlow()
 
     init {
-        _state.update { it.copy(modelAvailable = repo.isModelAvailable()) }
+        ServiceLocator.init(app)
+        _state.update { it.copy(modelAvailable = useCase.isModelAvailable()) }
+        Telemetry.subscribe { event ->
+            // Optional: forward ke Crashlytics / analytics nanti
+        }
     }
 
     fun setSource(bitmap: Bitmap) {
@@ -51,7 +60,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 progressPercent = 0,
                 progressText = "Menunggu…",
                 info = "Sumber: ${bitmap.width}×${bitmap.height}",
-                log = listOf("Gambar dimuat: ${bitmap.width}×${bitmap.height}")
+                log = listOf("Gambar dimuat: ${bitmap.width}×${bitmap.height}"),
+                usedFallback = false
             )
         }
     }
@@ -68,60 +78,93 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         _state.update {
             it.copy(
                 processing = true,
-                statusText = "Memuat model…",
+                statusText = "Memproses…",
                 statusKind = StatusKind.RUNNING,
                 progressPercent = 0,
-                progressText = "Memuat model…",
-                log = it.log + "Memuat interpreter…"
+                progressText = "Memulai…",
+                log = it.log + "─ Memulai proses ─",
+                usedFallback = false
             )
         }
 
         viewModelScope.launch {
-            val listener = object : ProgressListener {
-                override fun onProgress(info: ProgressInfo) {
-                    _state.update {
-                        it.copy(
-                            statusText = info.phase,
-                            statusKind = StatusKind.RUNNING,
-                            progressPercent = (info.tileProgress * 100).toInt(),
-                            progressText = String.format(
-                                "Tile %d/%d · %.0f ms/tile · Elapsed %ds · ETA %ds",
-                                info.currentTile, info.totalTiles, info.msPerTile,
-                                info.elapsedMs / 1000,
-                                if (info.etaMs >= 0) info.etaMs / 1000 else 0
-                            )
-                        )
+            val request = UpscaleRequest(
+                sourceBitmap = src,
+                backend = s.backend
+            )
+
+            val result = useCase(request) { event ->
+                when (event) {
+                    is ProgressEvent.Log -> {
+                        _state.update { it.copy(log = (it.log + event.message).takeLast(40)) }
                     }
-                }
-                override fun onLog(message: String) {
-                    _state.update { it.copy(log = (it.log + message).takeLast(30)) }
+                    is ProgressEvent.Warning -> {
+                        _state.update { it.copy(log = (it.log + "⚠ ${event.message}").takeLast(40)) }
+                    }
+                    is ProgressEvent.Error -> {
+                        _state.update { it.copy(log = (it.log + "✗ ${event.message}").takeLast(40)) }
+                    }
+                    is ProgressEvent.Stage -> {
+                        _state.update {
+                            it.copy(
+                                statusText = event.phase,
+                                progressText = event.detail.ifEmpty { event.phase }
+                            )
+                        }
+                    }
+                    is ProgressEvent.TileProgress -> {
+                        _state.update {
+                            it.copy(
+                                statusText = "Proses tile",
+                                progressPercent = (event.current.toFloat() / event.total * 100).toInt(),
+                                progressText = String.format(
+                                    "Tile %d/%d · %d ms/tile · %ds · ETA %ds",
+                                    event.current, event.total, event.msPerTile,
+                                    event.elapsedMs / 1000, event.etaMs / 1000
+                                )
+                            )
+                        }
+                    }
+                    is ProgressEvent.Complete -> {
+                        handleComplete(event.result)
+                    }
                 }
             }
 
-            try {
-                val out = repo.upscale(src, s.backend, listener)
-                _state.update {
-                    it.copy(
-                        result = out,
-                        processing = false,
-                        statusText = "Selesai",
-                        statusKind = StatusKind.DONE,
-                        progressPercent = 100,
-                        progressText = "Selesai · ${out.width}×${out.height}",
-                        info = "Hasil: ${out.width}×${out.height}"
-                    )
-                }
-            } catch (e: Throwable) {
-                _state.update {
-                    it.copy(
-                        processing = false,
-                        statusText = "Gagal",
-                        statusKind = StatusKind.ERROR,
-                        progressText = e.message?.take(180) ?: e.javaClass.simpleName,
-                        log = (it.log + "ERR: ${e.message}").takeLast(30)
-                    )
+            when (result) {
+                is AppResult.Success -> { /* sudah ditangani Complete */ }
+                is AppResult.Failure -> {
+                    _state.update {
+                        it.copy(
+                            processing = false,
+                            statusText = "Gagal",
+                            statusKind = StatusKind.ERROR,
+                            progressText = result.error.userMessage,
+                            log = (it.log + "ERROR: ${result.error.techMessage}").takeLast(40)
+                        )
+                    }
                 }
             }
         }
+    }
+
+    private fun handleComplete(result: UpscaleResult) {
+        _state.update {
+            it.copy(
+                result = result.bitmap,
+                processing = false,
+                statusText = if (result.usedFallback) "Selesai (fallback)" else "Selesai",
+                statusKind = StatusKind.DONE,
+                progressPercent = 100,
+                progressText = "Selesai · ${result.bitmap.width}×${result.bitmap.height} · ${result.elapsedMs / 1000}s",
+                info = "Hasil: ${result.bitmap.width}×${result.bitmap.height}",
+                usedFallback = result.usedFallback
+            )
+        }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        Telemetry.info("MainViewModel", "onCleared")
     }
 }

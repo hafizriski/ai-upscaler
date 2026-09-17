@@ -5,8 +5,7 @@
     <string name="action_save">Simpan</string>
     <string name="action_share">Bagikan</string>
     <string name="status_idle">Siap</string>
-    <string name="status_loading_model">Memuat model…</string>
-    <string name="status_processing">Memproses…</string>
+    <string name="status_running">Memproses</string>
     <string name="status_done">Selesai</string>
     <string name="status_error">Gagal</string>
     <string name="label_cpu">CPU</string>

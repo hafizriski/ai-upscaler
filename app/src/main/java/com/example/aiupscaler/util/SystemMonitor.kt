@@ -20,7 +20,6 @@ object SystemMonitor {
         val am = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
         val mi = ActivityManager.MemoryInfo()
         am.getMemoryInfo(mi)
-
         val total = mi.totalMem / (1024 * 1024)
         val avail = mi.availMem / (1024 * 1024)
         val used = total - avail
@@ -32,7 +31,7 @@ object SystemMonitor {
             ramPercent = pct,
             cpuCores = Runtime.getRuntime().availableProcessors(),
             cpuFreqMhz = readFreq(),
-            thermal = readThermal(),
+            thermal = "—",
             gpuLabel = gpuLabel
         )
     }
@@ -42,25 +41,5 @@ object SystemMonitor {
             val f = File("/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq")
             if (f.exists()) (f.readText().trim().toLong() / 1000).toInt() else 0
         } catch (_: Throwable) { 0 }
-    }
-
-    private fun readThermal(): String {
-        return try {
-            val paths = listOf(
-                "/sys/class/thermal/thermal_zone0/temp",
-                "/sys/class/thermal/thermal_zone1/temp"
-            )
-            var result = "—"
-            for (p in paths) {
-                val f = File(p)
-                if (f.exists()) {
-                    val raw = f.readText().trim().toLong()
-                    val c = if (raw > 1000) raw / 1000.0 else raw.toDouble()
-                    result = String.format("%.1f°C", c)
-                    break
-                }
-            }
-            result
-        } catch (_: Throwable) { "—" }
     }
 }
