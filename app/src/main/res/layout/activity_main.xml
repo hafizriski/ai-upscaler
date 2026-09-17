@@ -527,5 +527,15 @@
                 app:icon="@android:drawable/ic_menu_share"
                 app:iconPadding="0dp"/>
         </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm"
+            android:gravity="center"
+            android:text="@string/developer_info"
+            android:textColor="@color/md_on_surface_variant"
+            android:textSize="10sp"
+            android:alpha="0.7"/>
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

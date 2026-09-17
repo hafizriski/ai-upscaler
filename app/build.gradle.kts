@@ -4,15 +4,15 @@ plugins {
 }
 
 android {
-    namespace = "com.example.aiupscaler"
+    namespace = "com.arthexdev.exups"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.example.aiupscaler"
+        applicationId = "com.arthexdev.exups"
         minSdk = 28
         targetSdk = 34
-        versionCode = 11
-        versionName = "11.0.0"
+        versionCode = 12
+        versionName = "1.0.0"
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
         vectorDrawables.useSupportLibrary = true
     }

@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">AI Upscaler</string>
+    <string name="app_name">Ex Upscaler</string>
     <string name="action_pick">Pilih</string>
     <string name="action_upscale">Upscale</string>
     <string name="action_save">Simpan</string>
@@ -11,6 +11,8 @@
     <string name="label_gpu">GPU</string>
     <string name="label_detail">Detail proses</string>
     <string name="hint_pick_image">Pilih gambar untuk memulai</string>
-    <string name="saved_success">Tersimpan di Pictures/AIUpscaler</string>
+    <string name="saved_success">Tersimpan di Pictures/ExUpscaler</string>
     <string name="cd_image_preview">Pratinjau gambar</string>
+    <string name="developer_info">Developed by arthexdev</string>
+    <string name="app_version">v1.0.0</string>
 </resources>
