@@ -1,5 +1,8 @@
 package com.arthexdev.exups.ml.engine
 
 enum class Backend(val label: String) {
-    GPU("GPU"), CPU("CPU")
+    AUTO("Auto"),
+    GPU("GPU"),
+    NNAPI("NNAPI"),
+    CPU("CPU")
 }

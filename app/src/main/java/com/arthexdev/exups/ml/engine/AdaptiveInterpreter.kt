@@ -4,6 +4,7 @@ import android.content.Context
 import com.arthexdev.exups.core.error.AppError
 import com.arthexdev.exups.core.result.AppResult
 import com.arthexdev.exups.core.result.runCatchingResult
+import com.arthexdev.exups.ml.engine.delegate.DelegateSelector
 import org.tensorflow.lite.DataType
 import org.tensorflow.lite.Interpreter
 import java.io.FileInputStream
@@ -110,7 +111,8 @@ class AdaptiveInterpreter private constructor(
     companion object {
         fun load(context: Context, spec: ModelSpec, backend: Backend, threadCount: Int = 8): AppResult<AdaptiveInterpreter> =
             runCatchingResult {
-                val opts = DelegateFactory.build(context, backend, threadCount)
+                val sel = DelegateSelector.select(context, backend, threadCount)
+                val opts = sel.options
                 val buffer = loadModelBuffer(context, spec)
                 AdaptiveInterpreter(Interpreter(buffer, opts))
             }.let { result ->
