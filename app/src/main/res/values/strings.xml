@@ -1,8 +1,14 @@
 <resources>
     <string name="app_name">Ex Upscaler</string>
+
+    <!-- Nav -->
     <string name="nav_home">Home</string>
     <string name="nav_gallery">Gallery</string>
     <string name="nav_profile">Profile</string>
+    <!-- Legacy compat -->
+    <string name="nav_settings">Settings</string>
+
+    <!-- Actions -->
     <string name="action_add">Add</string>
     <string name="action_pick">Pilih</string>
     <string name="action_upscale">Upscale</string>
@@ -10,22 +16,52 @@
     <string name="action_share">Bagikan</string>
     <string name="action_cancel">Batalkan</string>
     <string name="action_save_profile">Simpan Profil</string>
+
+    <!-- Status -->
     <string name="status_idle">Siap</string>
+    <string name="status_loading_model">Memuat model…</string>
+    <string name="status_processing">Memproses…</string>
+    <string name="status_done">Selesai</string>
+    <string name="status_error">Gagal</string>
+
+    <!-- Labels -->
     <string name="label_model">Model AI</string>
     <string name="label_cpu">CPU</string>
     <string name="label_ram">RAM</string>
     <string name="label_gpu">GPU</string>
+    <string name="label_thermal">Suhu</string>
     <string name="label_threads">CPU Threads</string>
     <string name="label_detail">Detail proses</string>
+    <string name="label_backend">Backend</string>
+
+    <!-- Profile -->
     <string name="label_username">Username</string>
     <string name="hint_username">Masukkan username</string>
+    <string name="profile_title">Profil Saya</string>
+    <string name="profile_subtitle">Atur profil Anda</string>
     <string name="profile_saved">Profil tersimpan</string>
+
+    <!-- Gallery -->
     <string name="gallery_title">Hasil Upscale</string>
     <string name="gallery_empty">Belum ada hasil. Upscale gambar dulu!</string>
+
+    <!-- Hints -->
     <string name="hint_pick_image">Tap Add untuk pilih gambar</string>
     <string name="hint_no_result">Hasil akan muncul di sini</string>
+    <string name="hint_no_model">Model AI belum tersedia</string>
+
+    <!-- Messages -->
     <string name="saved_success">Tersimpan di Pictures/ExUpscaler</string>
+    <string name="error_pick">Pilih gambar dulu</string>
+    <string name="error_process">Gagal: %1$s</string>
+    <string name="backend_label">Backend: %1$s</string>
+
+    <!-- A11y -->
     <string name="cd_image_preview">Pratinjau gambar</string>
     <string name="cd_profile_photo">Foto profil</string>
+    <string name="cd_settings">Buka pengaturan</string>
+
+    <!-- Developer -->
     <string name="developer_info">Developed by arthexdev</string>
+    <string name="app_version">v1.0.0</string>
 </resources>

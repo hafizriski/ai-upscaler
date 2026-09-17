@@ -19,57 +19,66 @@
     <color name="ios_fill_secondary">#78788052</color>
     <color name="ios_fill_tertiary">#7676803D</color>
 
-    <!-- iOS Blue (system blue) -->
     <color name="ios_blue">#0A84FF</color>
     <color name="ios_blue_dark">#0066CC</color>
 
-    <!-- iOS status colors -->
     <color name="ios_green">#30D158</color>
     <color name="ios_orange">#FF9F0A</color>
     <color name="ios_red">#FF453A</color>
     <color name="ios_purple">#BF5AF2</color>
     <color name="ios_pink">#FF375F</color>
 
-    <!-- Status dots -->
+    <!-- Status -->
     <color name="status_idle">#8E8E93</color>
     <color name="status_running">@color/ios_orange</color>
     <color name="status_downloading">@color/ios_blue</color>
     <color name="status_done">@color/ios_green</color>
     <color name="status_error">@color/ios_red</color>
 
-    <!-- Legacy mapping -->
+    <!-- Brand compat -->
     <color name="brand_primary">@color/ios_blue</color>
     <color name="brand_primary_variant">@color/ios_blue_dark</color>
     <color name="brand_secondary">@color/ios_purple</color>
 
+    <!-- Legacy bg -->
     <color name="bg_base">@color/ios_bg</color>
     <color name="bg_surface">@color/ios_bg_elevated</color>
     <color name="bg_surface_2">@color/ios_bg_secondary</color>
     <color name="bg_surface_3">@color/ios_bg_tertiary</color>
+    <color name="bg_elevated">@color/ios_bg_tertiary</color>
 
+    <!-- Legacy text -->
     <color name="text_primary">@color/ios_label</color>
     <color name="text_secondary">@color/ios_label_secondary</color>
     <color name="text_tertiary">@color/ios_label_tertiary</color>
+    <color name="text_disabled">@color/ios_label_quaternary</color>
 
+    <!-- Legacy borders -->
     <color name="border_subtle">@color/ios_separator</color>
     <color name="border_default">@color/ios_separator_opaque</color>
+    <color name="border_strong">@color/ios_separator_opaque</color>
 
+    <!-- Overlay / skeleton -->
     <color name="overlay_scrim">#99000000</color>
     <color name="skeleton_base">#1C1C1E</color>
     <color name="skeleton_highlight">#2C2C2E</color>
 
-    <!-- Material legacy -->
+    <!-- ═══ Material 3 legacy (JANGAN HAPUS) ═══ -->
     <color name="md_primary">@color/ios_blue</color>
     <color name="md_primary_dark">@color/ios_purple</color>
     <color name="md_on_primary">#FFFFFF</color>
+    <color name="md_primary_container">@color/ios_blue</color>
+    <color name="md_on_primary_container">#FFFFFF</color>
+    <color name="md_secondary">@color/ios_purple</color>
+    <color name="md_secondary_container">@color/ios_bg_secondary</color>
+    <color name="md_on_secondary_container">#FFFFFF</color>
     <color name="md_surface">@color/ios_bg_elevated</color>
     <color name="md_surface_variant">@color/ios_bg_secondary</color>
     <color name="md_on_surface">@color/ios_label</color>
     <color name="md_on_surface_variant">@color/ios_label_secondary</color>
     <color name="md_background">@color/ios_bg</color>
     <color name="md_outline">@color/ios_separator</color>
-    <color name="md_primary_container">@color/ios_blue</color>
-    <color name="md_on_primary_container">@color/ios_label</color>
-    <color name="md_secondary_container">@color/ios_bg_secondary</color>
-    <color name="md_on_secondary_container">@color/ios_label</color>
+    <color name="md_outline_variant">@color/ios_separator_opaque</color>
+    <color name="md_error">@color/ios_red</color>
+    <color name="md_on_error">#FFFFFF</color>
 </resources>
