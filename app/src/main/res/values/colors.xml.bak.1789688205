@@ -10,12 +10,12 @@
     <color name="ios_label_secondary">#EBEBF599</color>
     <color name="ios_label_tertiary">#EBEBF54D</color>
     <color name="ios_fill_tertiary">#7676803D</color>
-    <color name="ios_blue">#8E8E93</color>
-    <color name="ios_blue_dark">#636366</color>
-    <color name="ios_green">#AEAEB2</color>
-    <color name="ios_orange">#8E8E93</color>
-    <color name="ios_red">#636366</color>
-    <color name="ios_purple">#8E8E93</color>
+    <color name="ios_blue">#0A84FF</color>
+    <color name="ios_blue_dark">#0066CC</color>
+    <color name="ios_green">#30D158</color>
+    <color name="ios_orange">#FF9F0A</color>
+    <color name="ios_red">#FF453A</color>
+    <color name="ios_purple">#BF5AF2</color>
 
     <color name="status_idle">#8E8E93</color>
     <color name="status_running">@color/ios_orange</color>
