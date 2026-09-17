@@ -5,6 +5,7 @@ import com.example.aiupscaler.core.error.AppError
 import com.example.aiupscaler.core.result.AppResult
 import com.example.aiupscaler.core.result.runCatchingResult
 import com.example.aiupscaler.core.telemetry.Telemetry
+import com.example.aiupscaler.util.GpuDetector
 import org.tensorflow.lite.DataType
 import org.tensorflow.lite.Interpreter
 import java.io.FileInputStream
@@ -19,7 +20,8 @@ class AdaptiveInterpreter private constructor(
 
     val state: InterpreterState
 
-    @Volatile private var workingStrategyIndex: Int = -1
+    @Volatile
+    private var workingStrategyIndex: Int = -1
 
     init {
         state = inspectModel()
@@ -39,14 +41,18 @@ class AdaptiveInterpreter private constructor(
         val outShape = outTensor.shape()
         val outType = outTensor.dataType()
 
-        val inIsNCHW: Boolean; val inH: Int; val inW: Int
+        val inIsNCHW: Boolean
+        val inH: Int
+        val inW: Int
         if (inShape.size == 4 && inShape[3] == 3) {
             inIsNCHW = false; inH = inShape[1]; inW = inShape[2]
         } else if (inShape.size == 4 && inShape[1] == 3) {
             inIsNCHW = true; inH = inShape[2]; inW = inShape[3]
         } else throw IllegalStateException("Input shape: ${inShape.toList()}")
 
-        val outIsNCHW: Boolean; val outH: Int; val outW: Int
+        val outIsNCHW: Boolean
+        val outH: Int
+        val outW: Int
         if (outShape.size == 4 && outShape[3] == 3) {
             outIsNCHW = false; outH = outShape[1]; outW = outShape[2]
         } else if (outShape.size == 4 && outShape[1] == 3) {
@@ -104,22 +110,32 @@ class AdaptiveInterpreter private constructor(
                 @Suppress("UNCHECKED_CAST")
                 if (state.outputIsNCHW) {
                     val nchw = raw as Array<Array<Array<FloatArray>>>
-                    Array(state.outH) { y -> Array(state.outW) { x ->
-                        FloatArray(3) { c -> nchw[0][c][y][x] }
-                    } }
-                } else (raw as Array<Array<Array<FloatArray>>>)[0]
+                    Array(state.outH) { y ->
+                        Array(state.outW) { x ->
+                            FloatArray(3) { c -> nchw[0][c][y][x] }
+                        }
+                    }
+                } else {
+                    (raw as Array<Array<Array<FloatArray>>>)[0]
+                }
             }
             else -> {
                 @Suppress("UNCHECKED_CAST")
                 val bytes = raw as Array<Array<Array<ByteArray>>>
-                Array(state.outH) { y -> Array(state.outW) { x ->
-                    FloatArray(3) { c -> (bytes[0][y][x][c].toInt() and 0xFF) / 255f }
-                } }
+                Array(state.outH) { y ->
+                    Array(state.outW) { x ->
+                        FloatArray(3) { c ->
+                            (bytes[0][y][x][c].toInt() and 0xFF) / 255f
+                        }
+                    }
+                }
             }
         }
     }
 
-    override fun close() { try { interpreter.close() } catch (_: Throwable) {} }
+    override fun close() {
+        try { interpreter.close() } catch (_: Throwable) {}
+    }
 
     companion object {
         fun load(
@@ -147,13 +163,11 @@ class AdaptiveInterpreter private constructor(
                 FileInputStream(fd.fileDescriptor).use { fis ->
                     return fis.channel.map(
                         FileChannel.MapMode.READ_ONLY,
-                        fd.startOffset, fd.declaredLength
+                        fd.startOffset,
+                        fd.declaredLength
                     ).order(ByteOrder.nativeOrder())
                 }
             }
         }
     }
 }
-
-// Import GpuDetector di sini
-import com.example.aiupscaler.util.GpuDetector
