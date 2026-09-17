@@ -5,9 +5,6 @@
     <string name="action_save">Simpan</string>
     <string name="action_share">Bagikan</string>
     <string name="status_idle">Siap</string>
-    <string name="status_running">Memproses</string>
-    <string name="status_done">Selesai</string>
-    <string name="status_error">Gagal</string>
     <string name="label_cpu">CPU</string>
     <string name="label_ram">RAM</string>
     <string name="label_thermal">Suhu</string>

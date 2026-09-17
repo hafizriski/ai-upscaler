@@ -35,50 +35,48 @@ class UpscaleRepositoryImpl(private val context: Context) : UpscaleRepository {
         val loadResult = AdaptiveInterpreter.load(context, MODEL_ASSET, request.backend)
         when (loadResult) {
             is AppResult.Failure -> {
-                emit(ProgressEvent.Warning("AI tidak tersedia, fallback ke bilinear"))
-                return@withContext fallbackResult(request, startTime, emit)
+                emit(ProgressEvent.Warning("AI tidak tersedia, fallback bilinear"))
+                return@withContext fallback(request, startTime, emit)
             }
             is AppResult.Success -> {
                 val engine = loadResult.data
                 emit(ProgressEvent.Log("Model: ${engine.state.describe()}"))
-
                 return@withContext try {
-                    val processor = TileProcessor(engine)
-                    when (val outcome = processor.process(request.sourceBitmap, emit)) {
+                    when (val out = TileProcessor(engine).process(request.sourceBitmap, emit)) {
                         is TileProcessor.ProcessOutcome.Success -> {
                             val result = UpscaleResult(
-                                bitmap = outcome.bitmap,
+                                bitmap = out.bitmap,
                                 originalWidth = request.sourceBitmap.width,
                                 originalHeight = request.sourceBitmap.height,
                                 scaleFactor = engine.state.scaleFactor,
-                                elapsedMs = outcome.elapsedMs,
-                                tilesProcessed = outcome.tilesProcessed,
-                                tilesFailed = outcome.tilesFailed,
-                                usedFallback = outcome.tilesFailed > 0,
+                                elapsedMs = out.elapsedMs,
+                                tilesProcessed = out.tilesProcessed,
+                                tilesFailed = out.tilesFailed,
+                                usedFallback = out.tilesFailed > 0,
                                 backend = request.backend.label
                             )
                             emit(ProgressEvent.Complete(result))
                             AppResult.Success(result)
                         }
                         is TileProcessor.ProcessOutcome.Failure -> {
-                            emit(ProgressEvent.Warning("Proses gagal: ${outcome.message}"))
-                            fallbackResult(request, startTime, emit)
+                            emit(ProgressEvent.Warning("Proses gagal: ${out.message}"))
+                            fallback(request, startTime, emit)
                         }
                     }
                 } finally {
-                    engine.close()
+                    try { engine.close() } catch (_: Throwable) {}
                 }
             }
         }
     }
 
-    private fun fallbackResult(
+    private fun fallback(
         request: UpscaleRequest,
         startTime: Long,
         emit: (ProgressEvent) -> Unit
     ): AppResult<UpscaleResult> {
         return try {
-            emit(ProgressEvent.Log("Fallback: bilinear 4×"))
+            emit(ProgressEvent.Log("Fallback bilinear 4×"))
             val out = BilinearUpscaler.upscale(request.sourceBitmap, 4)
             val result = UpscaleResult(
                 bitmap = out,
@@ -86,15 +84,12 @@ class UpscaleRepositoryImpl(private val context: Context) : UpscaleRepository {
                 originalHeight = request.sourceBitmap.height,
                 scaleFactor = 4,
                 elapsedMs = System.currentTimeMillis() - startTime,
-                tilesProcessed = 1,
-                tilesFailed = 0,
-                usedFallback = true,
-                backend = "Bilinear"
+                tilesProcessed = 1, tilesFailed = 0,
+                usedFallback = true, backend = "Bilinear"
             )
             emit(ProgressEvent.Complete(result))
             AppResult.Success(result)
         } catch (e: Throwable) {
-            Telemetry.error("Repository", "Fallback gagal: ${e.message}")
             AppResult.Failure(AppError.InferenceFailed("Fallback gagal: ${e.message}", e))
         }
     }

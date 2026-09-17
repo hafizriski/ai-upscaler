@@ -8,24 +8,8 @@ sealed class AppResult<out T> {
 
     val isSuccess: Boolean get() = this is Success
     val isFailure: Boolean get() = this is Failure
-
     fun getOrNull(): T? = (this as? Success)?.data
     fun errorOrNull(): AppError? = (this as? Failure)?.error
-
-    inline fun <R> map(transform: (T) -> R): AppResult<R> = when (this) {
-        is Success -> Success(transform(data))
-        is Failure -> this
-    }
-
-    inline fun onSuccess(action: (T) -> Unit): AppResult<T> {
-        if (this is Success) action(data)
-        return this
-    }
-
-    inline fun onFailure(action: (AppError) -> Unit): AppResult<T> {
-        if (this is Failure) action(error)
-        return this
-    }
 }
 
 inline fun <T> runCatchingResult(block: () -> T): AppResult<T> = try {

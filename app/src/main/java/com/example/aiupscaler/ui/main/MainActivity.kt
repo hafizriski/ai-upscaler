@@ -68,12 +68,10 @@ class MainActivity : AppCompatActivity() {
         }
         binding.btnSave.setOnClickListener { saveResult() }
         binding.btnShare.setOnClickListener { shareResult() }
-
         binding.toggleBackend.addOnButtonCheckedListener { _, id, checked ->
             if (checked) vm.setBackend(if (id == binding.btnGpu.id) Backend.GPU else Backend.CPU)
         }
         binding.toggleBackend.check(binding.btnCpu.id)
-
         binding.logHeader.setOnClickListener {
             val visible = binding.tvLog.visibility == View.VISIBLE
             binding.tvLog.visibility = if (visible) View.GONE else View.VISIBLE
@@ -87,11 +85,9 @@ class MainActivity : AppCompatActivity() {
                 vm.state.collect { s ->
                     binding.imagePreview.setImageBitmap(s.result ?: s.source)
                     binding.tvInfo.text = s.info
-
                     binding.tvStatus.text = s.statusText
                     binding.tvPercent.text = if (s.progressPercent > 0) "${s.progressPercent}%" else ""
                     binding.tvProgress.text = s.progressText
-
                     binding.statusDot.setBackgroundResource(
                         when (s.statusKind) {
                             StatusKind.IDLE -> R.drawable.dot_idle
@@ -100,7 +96,6 @@ class MainActivity : AppCompatActivity() {
                             StatusKind.ERROR -> R.drawable.dot_error
                         }
                     )
-
                     if (s.processing) {
                         binding.linearProgress.visibility = View.VISIBLE
                         binding.linearProgress.isIndeterminate = s.progressPercent == 0
@@ -112,14 +107,12 @@ class MainActivity : AppCompatActivity() {
                     } else {
                         binding.linearProgress.visibility = View.INVISIBLE
                     }
-
                     binding.btnUpscale.isEnabled = s.source != null && !s.processing
                     binding.btnPick.isEnabled = !s.processing
                     binding.btnSave.isEnabled = s.result != null && !s.processing
                     binding.btnShare.isEnabled = s.result != null && !s.processing
                     binding.toggleBackend.isEnabled = !s.processing
                     binding.chipBackend.text = s.backend.label
-
                     binding.tvLog.text = s.log.takeLast(12).joinToString("\n")
                 }
             }
@@ -186,7 +179,7 @@ class MainActivity : AppCompatActivity() {
                         putExtra(Intent.EXTRA_STREAM, uri)
                         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                     }
-                    startActivity(Intent.createChooser(intent, "Bagikan hasil"))
+                    startActivity(Intent.createChooser(intent, "Bagikan"))
                 }
             } catch (e: Throwable) {
                 withContext(Dispatchers.Main) { toast("Gagal bagikan: ${e.message}") }
