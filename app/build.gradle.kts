@@ -11,8 +11,8 @@ android {
         applicationId = "com.example.aiupscaler"
         minSdk = 26
         targetSdk = 34
-        versionCode = 2
-        versionName = "2.0"
+        versionCode = 3
+        versionName = "3.0"
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
     }
 
@@ -20,7 +20,11 @@ android {
     buildFeatures { viewBinding = true }
 
     packaging {
-        resources.excludes += setOf("META-INF/*.kotlin_module")
+        resources.excludes += setOf(
+            "META-INF/*.kotlin_module",
+            "META-INF/DEPENDENCIES",
+            "META-INF/LICENSE*"
+        )
     }
 
     compileOptions {

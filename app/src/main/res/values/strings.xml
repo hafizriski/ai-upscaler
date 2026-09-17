@@ -1,3 +1,14 @@
 <resources>
     <string name="app_name">AI Upscaler</string>
+    <string name="pick_image">Pilih Gambar</string>
+    <string name="upscale">Upscale</string>
+    <string name="save">Simpan</string>
+    <string name="info_idle">Pilih gambar untuk memulai</string>
+    <string name="info_processing">Memproses…</string>
+    <string name="info_result">Hasil: %1$dx%2$d</string>
+    <string name="info_source">Sumber: %1$dx%2$d</string>
+    <string name="error_pick">Pilih gambar dulu</string>
+    <string name="error_process">Gagal memproses: %1$s</string>
+    <string name="saved_ok">Tersimpan di Pictures/AIUpscaler</string>
+    <string name="backend_label">Backend: %1$s</string>
 </resources>
