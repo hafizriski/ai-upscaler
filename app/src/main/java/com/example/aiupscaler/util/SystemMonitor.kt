@@ -6,7 +6,7 @@ import java.io.File
 
 data class SystemStats(
     val ramUsedMb: Long, val ramTotalMb: Long, val ramPercent: Float,
-    val cpuCores: Int, val cpuFreqMhz: Int, val thermal: String, val gpuLabel: String
+    val cpuCores: Int, val cpuFreqMhz: Int, val gpuLabel: String
 )
 
 object SystemMonitor {
@@ -19,7 +19,7 @@ object SystemMonitor {
         val used = total - avail
         val pct = if (total > 0) used.toFloat() / total * 100f else 0f
         return SystemStats(used, total, pct,
-            Runtime.getRuntime().availableProcessors(), readFreq(), "—", gpuLabel)
+            Runtime.getRuntime().availableProcessors(), readFreq(), gpuLabel)
     }
     private fun readFreq(): Int = try {
         val f = File("/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq")

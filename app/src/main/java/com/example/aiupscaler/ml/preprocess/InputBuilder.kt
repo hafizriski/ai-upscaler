@@ -15,7 +15,7 @@ object InputBuilder {
             DataType.FLOAT32 -> floatBuf(px, state.inputIsNCHW, size)
             DataType.UINT8 -> uint8Buf(px, state.inputIsNCHW, size)
             DataType.INT8 -> int8Buf(px, state.inputIsNCHW, size)
-            else -> throw IllegalStateException("Input type tidak didukung: ${state.inputType}")
+            else -> throw IllegalStateException("Input type tidak didukung")
         }
     }
 

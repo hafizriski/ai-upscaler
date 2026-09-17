@@ -1,13 +1,11 @@
 package com.example.aiupscaler.util
 
-import android.opengl.GLES20
 import java.io.File
 
 object GpuDetector {
 
     data class GpuInfo(
         val renderer: String,
-        val vendor: String,
         val isAdreno: Boolean,
         val adrenoSeries: String,
         val supportsVulkan: Boolean,
@@ -17,21 +15,17 @@ object GpuDetector {
     )
 
     fun detect(): GpuInfo {
-        val renderer = readGlString(GLES20.GL_RENDERER)
-        val vendor = readGlString(GLES20.GL_VENDOR)
+        val renderer = readGpuFromSystem()
         val isAdreno = renderer.contains("Adreno", ignoreCase = true)
-
         val adrenoSeries = when {
-            isAdreno && renderer.contains("Adreno (TM) 8") -> "8xx"
-            isAdreno && renderer.contains("Adreno (TM) 7") -> "7xx"
-            isAdreno && renderer.contains("Adreno (TM) 6") -> "6xx"
-            isAdreno && renderer.contains("Adreno (TM) 5") -> "5xx"
+            isAdreno && renderer.contains("8") -> "8xx"
+            isAdreno && renderer.contains("7") -> "7xx"
+            isAdreno && renderer.contains("6") -> "6xx"
+            isAdreno && renderer.contains("5") -> "5xx"
             else -> "unknown"
         }
-
         val hasVulkan = File("/system/lib64/libvulkan.so").exists() ||
                 File("/vendor/lib64/hw/vulkan.adreno.so").exists()
-
         val apiLevel = when (adrenoSeries) {
             "8xx", "7xx" -> 3
             "6xx" -> 2
@@ -40,9 +34,7 @@ object GpuDetector {
         }
         val fp16 = adrenoSeries in listOf("6xx", "7xx", "8xx")
         val recommended = if (hasVulkan && fp16) "Vulkan" else "CPU"
-
-        return GpuInfo(renderer, vendor, isAdreno, adrenoSeries,
-            hasVulkan, apiLevel, fp16, recommended)
+        return GpuInfo(renderer, isAdreno, adrenoSeries, hasVulkan, apiLevel, fp16, recommended)
     }
 
     fun recommendedCpuThreads(): Int {
@@ -55,7 +47,16 @@ object GpuDetector {
         }
     }
 
-    private fun readGlString(name: Int): String = try {
-        GLES20.glGetString(name) ?: "Unknown"
-    } catch (_: Throwable) { "Unknown" }
+    private fun readGpuFromSystem(): String {
+        // Coba baca dari /proc atau fallback ke Build.MODEL
+        try {
+            val f = File("/sys/class/kgsl/kgsl-3d0/gpu_model")
+            if (f.exists()) return f.readText().trim()
+        } catch (_: Throwable) {}
+        try {
+            val f = File("/sys/class/kgsl/kgsl-3d0/devfreq/cur_freq")
+            if (f.exists()) return "Adreno"
+        } catch (_: Throwable) {}
+        return "Unknown GPU"
+    }
 }
