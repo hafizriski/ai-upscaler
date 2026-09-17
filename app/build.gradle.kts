@@ -11,19 +11,27 @@ android {
         applicationId = "com.example.aiupscaler"
         minSdk = 26
         targetSdk = 34
-        versionCode = 4
-        versionName = "4.0"
+        versionCode = 7
+        versionName = "7.0.0"
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
+        resourceConfigurations += listOf("in", "en")
     }
 
-    androidResources { noCompress += listOf("tflite", "bin") }
-    buildFeatures { viewBinding = true }
+    androidResources {
+        noCompress += listOf("tflite", "bin")
+    }
+
+    buildFeatures {
+        viewBinding = true
+    }
 
     packaging {
         resources.excludes += setOf(
             "META-INF/*.kotlin_module",
             "META-INF/DEPENDENCIES",
-            "META-INF/LICENSE*"
+            "META-INF/LICENSE*",
+            "META-INF/AL2.0",
+            "META-INF/LGPL2.1"
         )
     }
 
@@ -32,25 +40,41 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions { jvmTarget = "17" }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
+    }
 }
 
 dependencies {
-    val lifecycle = "2.7.0"
-    val coroutines = "1.7.3"
-
+    // AndroidX core
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("com.google.android.material:material:1.11.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
-
-    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycle")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:$lifecycle")
     implementation("androidx.activity:activity-ktx:1.8.2")
+    implementation("androidx.fragment:fragment-ktx:1.6.2")
 
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutines")
+    // Lifecycle + ViewModel
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-savedstate:2.7.0")
 
+    // Coroutines
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+
+    // TFLite
     implementation("org.tensorflow:tensorflow-lite:2.14.0")
-    implementation("org.tensorflow:tensorflow-lite-support:0.4.4")
 
+    // Exif
     implementation("androidx.exifinterface:exifinterface:1.3.7")
+
+    // RecyclerView (for settings)
+    implementation("androidx.recyclerview:recyclerview:1.3.2")
 }
