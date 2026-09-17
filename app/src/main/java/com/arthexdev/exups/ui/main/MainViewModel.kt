@@ -76,7 +76,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             log = listOf(
                 "GPU: ${gpuInfo.renderer}",
                 "Adreno: ${gpuInfo.adrenoSeries}",
-                "Vulkan: ${if (gpuInfo.supportsVulkan) "✅ API ${gpuInfo.vulkanApiLevel}" else "❌"}",
+                "Vulkan: ${if (gpuInfo.supportsVulkan) "OK API ${gpuInfo.vulkanApiLevel}" else "Tidak didukung"}",
                 "CPU threads: $recommendedThreads"
             )
         )
@@ -98,14 +98,21 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     fun setSource(bitmap: Bitmap) {
         _state.update {
-            it.copy(source = bitmap, result = null,
-                statusText = "Siap", statusKind = StatusKind.IDLE,
-                progressPercent = 0, progressText = "Menunggu…",
-                info = "Sumber: ${bitmap.width}×${bitmap.height}")
+            it.copy(
+                source = bitmap,
+                result = null,
+                statusText = "Siap",
+                statusKind = StatusKind.IDLE,
+                progressPercent = 0,
+                progressText = "Menunggu…",
+                info = "Sumber: ${bitmap.width}×${bitmap.height}"
+            )
         }
     }
 
-    fun setBackend(backend: Backend) { _state.update { it.copy(backend = backend) } }
+    fun setBackend(backend: Backend) {
+        _state.update { it.copy(backend = backend) }
+    }
 
     fun setThreadCount(count: Int) {
         _state.update { it.copy(threadCount = count.coerceIn(1, it.maxThreads)) }
@@ -119,7 +126,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             it.copy(
                 selectedModelId = modelId,
                 selectedReady = ready,
-                log = (it.log + "Model: ${spec.displayName} ${if (ready) "✅" else "(belum di-download)"}").takeLast(40)
+                log = (it.log + "Model: ${spec.displayName} ${if (ready) "[OK]" else "[belum di-download]"}").takeLast(40)
             )
         }
     }
@@ -129,10 +136,13 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         downloadJob?.cancel()
         _state.update {
             it.copy(
-                processing = false, downloading = false, canCancel = false,
-                statusText = "Dibatalkan", statusKind = StatusKind.CANCELLED,
+                processing = false,
+                downloading = false,
+                canCancel = false,
+                statusText = "Dibatalkan",
+                statusKind = StatusKind.CANCELLED,
                 progressText = "Dibatalkan oleh pengguna",
-                log = (it.log + "✗ Dibatalkan").takeLast(40),
+                log = (it.log + "X Dibatalkan").takeLast(40),
                 progressPercent = 0
             )
         }
@@ -143,6 +153,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         val s = _state.value
         val spec = s.selectedModel ?: return
         val src = s.source ?: return
+        if (src.width <= 0) return
 
         if (ModelRegistry.isReady(getApplication(), spec)) {
             upscale()
@@ -156,12 +167,13 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
         _state.update {
             it.copy(
-                downloading = true, canCancel = true,
+                downloading = true,
+                canCancel = true,
                 statusText = "Mengunduh model…",
                 statusKind = StatusKind.DOWNLOADING,
                 progressPercent = 0,
                 progressText = "0 MB / ${spec.approxSizeMb} MB",
-                log = (it.log + "↓ Download ${spec.displayName}").takeLast(40)
+                log = (it.log + "v Download ${spec.displayName}").takeLast(40)
             )
         }
 
@@ -171,34 +183,42 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 url = spec.remoteUrl,
                 fileName = spec.fileName,
                 expectedSize = spec.approxSizeMb * 1024L * 1024L,
-            ) { downloaded, total, percent ->
-                val mbDone = downloaded / 1024 / 1024
-                val mbTotal = if (total > 0) total / 1024 / 1024 else spec.approxSizeMb.toLong()
-                _state.update {
-                    it.copy(
-                        progressPercent = percent.coerceIn(0, 100),
-                        progressText = "$mbDone MB / $mbTotal MB (${percent}%)"
-                    )
+                onProgress = { downloaded, total, percent ->
+                    val mbDone = downloaded / 1024 / 1024
+                    val mbTotal = if (total > 0) total / 1024 / 1024 else spec.approxSizeMb.toLong()
+                    _state.update { st ->
+                        st.copy(
+                            progressPercent = percent.coerceIn(0, 100),
+                            progressText = "$mbDone MB / $mbTotal MB (${percent}%)"
+                        )
+                    }
+                },
+                onLog = { msg ->
+                    _state.update { st ->
+                        st.copy(log = (st.log + msg).takeLast(40))
+                    }
                 }
-            }
+            )
 
             if (success) {
                 _state.update {
                     it.copy(
-                        downloading = false, canCancel = false,
+                        downloading = false,
+                        canCancel = false,
                         selectedReady = true,
-                        log = (it.log + "✅ Download selesai").takeLast(40)
+                        log = (it.log + "OK Download selesai").takeLast(40)
                     )
                 }
                 upscale()
             } else {
                 _state.update {
                     it.copy(
-                        downloading = false, canCancel = false,
+                        downloading = false,
+                        canCancel = false,
                         statusText = "Download gagal",
                         statusKind = StatusKind.ERROR,
                         progressText = "Periksa koneksi internet",
-                        log = (it.log + "✗ Download gagal").takeLast(40)
+                        log = (it.log + "X Download gagal").takeLast(40)
                     )
                 }
             }
@@ -211,28 +231,45 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         if (s.processing || s.downloading) return
 
         _state.update {
-            it.copy(processing = true, canCancel = true,
-                statusText = "Memproses…", statusKind = StatusKind.RUNNING,
-                progressPercent = 0, progressText = "Memulai…",
-                log = it.log + "─ Mulai proses ─")
+            it.copy(
+                processing = true,
+                canCancel = true,
+                statusText = "Memproses…",
+                statusKind = StatusKind.RUNNING,
+                progressPercent = 0,
+                progressText = "Memulai…",
+                log = it.log + "-- Mulai proses --"
+            )
         }
 
         processingJob = viewModelScope.launch {
             val result = try {
                 useCase(UpscaleRequest(src, s.backend, s.threadCount, s.selectedModelId)) { event ->
                     when (event) {
-                        is ProgressEvent.Log -> _state.update { st -> st.copy(log = (st.log + event.message).takeLast(40)) }
-                        is ProgressEvent.Warning -> _state.update { st -> st.copy(log = (st.log + "⚠ ${event.message}").takeLast(40)) }
-                        is ProgressEvent.Error -> _state.update { st -> st.copy(log = (st.log + "✗ ${event.message}").takeLast(40)) }
+                        is ProgressEvent.Log -> _state.update { st ->
+                            st.copy(log = (st.log + event.message).takeLast(40))
+                        }
+                        is ProgressEvent.Warning -> _state.update { st ->
+                            st.copy(log = (st.log + "! ${event.message}").takeLast(40))
+                        }
+                        is ProgressEvent.Error -> _state.update { st ->
+                            st.copy(log = (st.log + "X ${event.message}").takeLast(40))
+                        }
                         is ProgressEvent.Stage -> _state.update { st ->
-                            st.copy(statusText = event.phase, progressText = event.detail.ifEmpty { event.phase })
+                            st.copy(
+                                statusText = event.phase,
+                                progressText = event.detail.ifEmpty { event.phase }
+                            )
                         }
                         is ProgressEvent.TileProgress -> _state.update { st ->
                             val pct = if (event.total > 0)
                                 ((event.current.toFloat() / event.total) * 100f).toInt().coerceIn(0, 100)
                             else 0
-                            st.copy(statusText = "Proses tile", progressPercent = pct,
-                                progressText = "Tile ${event.current.coerceAtMost(event.total)}/${event.total} · ${event.msPerTile}ms/tile")
+                            st.copy(
+                                statusText = "Proses tile",
+                                progressPercent = pct,
+                                progressText = "Tile ${event.current.coerceAtMost(event.total)}/${event.total} · ${event.msPerTile}ms/tile"
+                            )
                         }
                         is ProgressEvent.Complete -> handleComplete(event.result)
                     }
@@ -245,10 +282,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
             if (result is AppResult.Failure) {
                 _state.update {
-                    it.copy(processing = false, canCancel = false,
-                        statusText = "Gagal", statusKind = StatusKind.ERROR,
+                    it.copy(
+                        processing = false,
+                        canCancel = false,
+                        statusText = "Gagal",
+                        statusKind = StatusKind.ERROR,
                         progressText = result.error.userMessage,
-                        log = (it.log + "ERROR: ${result.error.techMessage}").takeLast(40))
+                        log = (it.log + "ERROR: ${result.error.techMessage}").takeLast(40)
+                    )
                 }
             }
         }
@@ -256,11 +297,16 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     private fun handleComplete(r: UpscaleResult) {
         _state.update {
-            it.copy(result = r.bitmap, processing = false, canCancel = false,
+            it.copy(
+                result = r.bitmap,
+                processing = false,
+                canCancel = false,
                 statusText = if (r.usedFallback) "Selesai (fallback)" else "Selesai",
-                statusKind = StatusKind.DONE, progressPercent = 100,
+                statusKind = StatusKind.DONE,
+                progressPercent = 100,
                 progressText = "Selesai · ${r.bitmap.width}×${r.bitmap.height} · ${r.elapsedMs / 1000}s",
-                info = "Hasil: ${r.bitmap.width}×${r.bitmap.height}")
+                info = "Hasil: ${r.bitmap.width}×${r.bitmap.height}"
+            )
         }
     }
 }
