@@ -20,18 +20,22 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+      - name: Grant execute permission
+        run: chmod +x gradlew
 
       - name: Build Debug APK
-        run: gradle assembleDebug --no-daemon
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
+        env:
+          ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+          ANDROID_HOME: /usr/local/lib/android/sdk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: ai-upscaler-debug
-          path: app/build/outputs/apk/debug/app-debug.apk
+          path: |
+            app/build/outputs/apk/debug/*.apk
+            **/*.apk
           retention-days: 30
+          if-no-files-found: warn
