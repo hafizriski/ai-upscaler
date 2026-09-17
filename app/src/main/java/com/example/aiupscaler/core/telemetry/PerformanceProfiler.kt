@@ -3,9 +3,6 @@ package com.example.aiupscaler.core.telemetry
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
 
-/**
- * Profiler untuk mengukur performa berbagai tahap.
- */
 object PerformanceProfiler {
 
     private val timings = ConcurrentHashMap<String, MutableList<Long>>()

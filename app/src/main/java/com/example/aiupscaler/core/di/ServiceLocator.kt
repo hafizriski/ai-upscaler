@@ -5,13 +5,9 @@ import com.example.aiupscaler.data.repository.UpscaleRepositoryImpl
 import com.example.aiupscaler.domain.repository.UpscaleRepository
 import com.example.aiupscaler.domain.usecase.UpscaleImageUseCase
 
-/**
- * Service Locator ringan.
- * Ganti dengan Hilt/Dagger kalau project membesar.
- */
 object ServiceLocator {
 
-    private lateinit var appContext: Context
+    private var appContext: Context? = null
     private var repo: UpscaleRepository? = null
     private var useCase: UpscaleImageUseCase? = null
 
@@ -20,10 +16,15 @@ object ServiceLocator {
     }
 
     fun provideRepository(): UpscaleRepository {
-        return repo ?: UpscaleRepositoryImpl(appContext).also { repo = it }
+        val existing = repo
+        if (existing != null) return existing
+        val ctx = appContext ?: throw IllegalStateException("ServiceLocator belum di-init")
+        return UpscaleRepositoryImpl(ctx).also { repo = it }
     }
 
     fun provideUpscaleUseCase(): UpscaleImageUseCase {
-        return useCase ?: UpscaleImageUseCase(provideRepository()).also { useCase = it }
+        val existing = useCase
+        if (existing != null) return existing
+        return UpscaleImageUseCase(provideRepository()).also { useCase = it }
     }
 }

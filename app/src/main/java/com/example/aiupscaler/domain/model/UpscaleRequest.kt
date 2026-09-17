@@ -1,9 +1,10 @@
 package com.example.aiupscaler.domain.model
 
+import android.graphics.Bitmap
 import com.example.aiupscaler.ml.engine.Backend
 
 data class UpscaleRequest(
-    val sourceBitmap: android.graphics.Bitmap,
+    val sourceBitmap: Bitmap,
     val backend: Backend = Backend.CPU,
     val tileSize: Int = 128,
     val tileOverlap: Int = 8,

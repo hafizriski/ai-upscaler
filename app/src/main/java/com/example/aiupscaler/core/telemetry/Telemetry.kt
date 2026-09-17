@@ -3,10 +3,6 @@ package com.example.aiupscaler.core.telemetry
 import android.util.Log
 import java.util.concurrent.CopyOnWriteArrayList
 
-/**
- * Central telemetry & logging.
- * Semua log, metrik, dan error dikumpulkan di sini.
- */
 object Telemetry {
 
     private const val TAG = "AIUpscaler"
