@@ -7,31 +7,23 @@ import android.os.Build
 import androidx.core.content.ContextCompat
 
 object PermissionHelper {
-
     fun getStoragePermissions(): Array<String> = when {
         Build.VERSION.SDK_INT >= 34 -> arrayOf(
             Manifest.permission.READ_MEDIA_IMAGES,
-            Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
-        )
-        Build.VERSION.SDK_INT >= 33 -> arrayOf(
-            Manifest.permission.READ_MEDIA_IMAGES
-        )
-        else -> arrayOf(
-            Manifest.permission.READ_EXTERNAL_STORAGE
-        )
+            Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED)
+        Build.VERSION.SDK_INT >= 33 -> arrayOf(Manifest.permission.READ_MEDIA_IMAGES)
+        else -> arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
     }
 
     fun getNotificationPermissions(): Array<String> = when {
-        Build.VERSION.SDK_INT >= 33 -> arrayOf(
-            Manifest.permission.POST_NOTIFICATIONS
-        )
+        Build.VERSION.SDK_INT >= 33 -> arrayOf(Manifest.permission.POST_NOTIFICATIONS)
         else -> emptyArray()
     }
 
     fun getRequiredPermissions(): Array<String> {
-        val storage = getStoragePermissions()
-        val notif = getNotificationPermissions()
-        return (storage + notif).distinct().toTypedArray()
+        val s = getStoragePermissions()
+        val n = getNotificationPermissions()
+        return (s + n).distinct().toTypedArray()
     }
 
     fun hasStoragePermission(context: Context): Boolean =
@@ -43,7 +35,4 @@ object PermissionHelper {
         getRequiredPermissions().all {
             ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
         }
-
-    fun isGranted(context: Context, permission: String): Boolean =
-        ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
 }

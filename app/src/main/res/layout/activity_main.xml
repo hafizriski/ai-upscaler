@@ -4,14 +4,14 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_gradient">
+    android:background="@color/ios_bg">
 
-    <!-- Toolbar -->
+    <!-- ═══ iOS NAV BAR ═══ -->
     <LinearLayout
         android:id="@+id/toolbar"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:background="@color/bg_base"
+        android:background="@color/ios_bg"
         android:fitsSystemWindows="true"
         android:gravity="center_vertical"
         android:minHeight="@dimen/toolbar_height"
@@ -23,27 +23,17 @@
 
         <TextView
             android:id="@+id/tvAppTitle"
-            style="@style/TextTitle"
+            style="@style/IOS_LargeTitle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="@string/app_name"
-            android:textSize="22sp"/>
-
-        <ImageButton
-            android:id="@+id/btnToolbarMore"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="More"
-            android:padding="8dp"
-            android:src="@android:drawable/ic_menu_more"
-            app:tint="@color/text_primary"/>
+            android:paddingVertical="@dimen/sp_2"
+            android:text="@string/app_name"/>
     </LinearLayout>
 
-    <!-- Scroll content -->
+    <!-- ═══ HOME TAB ═══ -->
     <androidx.core.widget.NestedScrollView
-        android:id="@+id/scroll"
+        android:id="@+id/tabHome"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:clipToPadding="false"
@@ -58,10 +48,10 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:paddingHorizontal="@dimen/sp_4"
-            android:paddingTop="@dimen/sp_4">
+            android:paddingHorizontal="@dimen/sp_5"
+            android:paddingTop="@dimen/sp_3">
 
-            <!-- ═══ PREVIEW CARD ═══ -->
+            <!-- Preview Card -->
             <com.google.android.material.card.MaterialCardView
                 style="@style/CardSurface"
                 android:layout_width="match_parent"
@@ -75,12 +65,10 @@
                         android:id="@+id/imagePreview"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:layout_margin="@dimen/sp_3"
-                        android:background="@color/bg_surface_2"
+                        android:background="@color/ios_bg_secondary"
                         android:contentDescription="@string/cd_image_preview"
                         android:scaleType="fitCenter"/>
 
-                    <!-- Placeholder hint -->
                     <LinearLayout
                         android:id="@+id/previewPlaceholder"
                         android:layout_width="wrap_content"
@@ -90,21 +78,20 @@
                         android:orientation="vertical">
 
                         <ImageView
-                            android:layout_width="48dp"
-                            android:layout_height="48dp"
+                            android:layout_width="56dp"
+                            android:layout_height="56dp"
                             android:alpha="0.4"
-                            android:src="@android:drawable/ic_menu_gallery"
-                            app:tint="@color/text_secondary"/>
+                            android:src="@mipmap/ic_launcher"
+                            app:tint="@color/ios_label_secondary"/>
 
                         <TextView
-                            style="@style/TextLabel"
+                            style="@style/IOS_Subheadline"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="@dimen/sp_2"
+                            android:layout_marginTop="@dimen/sp_3"
                             android:text="@string/hint_pick_image"/>
                     </LinearLayout>
 
-                    <!-- Progress overlay -->
                     <View
                         android:id="@+id/progressScrim"
                         android:layout_width="match_parent"
@@ -126,27 +113,36 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:indeterminate="true"
-                            app:indicatorColor="@color/brand_primary"
-                            app:trackColor="@color/bg_surface_3"/>
+                            app:indicatorColor="@color/ios_blue"
+                            app:trackColor="@color/ios_bg_tertiary"/>
                     </LinearLayout>
                 </FrameLayout>
             </com.google.android.material.card.MaterialCardView>
 
             <TextView
                 android:id="@+id/tvInfo"
-                style="@style/TextCaption"
+                style="@style/IOS_Caption1"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/sp_3"
                 android:gravity="center"
                 android:text="@string/hint_no_result"/>
 
-            <!-- ═══ MODEL PICKER ═══ -->
+            <!-- Model Picker — iOS Grouped Inset -->
+            <TextView
+                style="@style/IOS_Footnote"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/sp_6"
+                android:layout_marginStart="@dimen/sp_1"
+                android:layout_marginBottom="@dimen/sp_2"
+                android:text="@string/label_model"
+                android:textAllCaps="true"/>
+
             <com.google.android.material.card.MaterialCardView
                 style="@style/CardSurface"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/sp_4">
+                android:layout_height="wrap_content">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -154,16 +150,9 @@
                     android:orientation="vertical"
                     android:padding="@dimen/sp_4">
 
-                    <TextView
-                        style="@style/TextHeadline"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/label_model"/>
-
                     <HorizontalScrollView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/sp_3"
                         android:scrollbars="none">
 
                         <com.google.android.material.chip.ChipGroup
@@ -186,7 +175,7 @@
 
                         <TextView
                             android:id="@+id/tvModelName"
-                            style="@style/TextBody"
+                            style="@style/IOS_Body"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:textStyle="bold"
@@ -194,7 +183,7 @@
 
                         <TextView
                             android:id="@+id/tvModelDesc"
-                            style="@style/TextCaption"
+                            style="@style/IOS_Caption1"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
@@ -208,7 +197,7 @@
 
                             <TextView
                                 android:id="@+id/chipScale"
-                                style="@style/TextCaption"
+                                style="@style/IOS_Caption2"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:background="@drawable/bg_info_panel"
@@ -218,7 +207,7 @@
 
                             <TextView
                                 android:id="@+id/chipSize"
-                                style="@style/TextCaption"
+                                style="@style/IOS_Caption2"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginStart="@dimen/sp_1"
@@ -229,7 +218,7 @@
 
                             <TextView
                                 android:id="@+id/chipSpeed"
-                                style="@style/TextCaption"
+                                style="@style/IOS_Caption2"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginStart="@dimen/sp_1"
@@ -242,12 +231,21 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- ═══ STATUS CARD ═══ -->
+            <!-- Status -->
+            <TextView
+                style="@style/IOS_Footnote"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/sp_6"
+                android:layout_marginStart="@dimen/sp_1"
+                android:layout_marginBottom="@dimen/sp_2"
+                android:text="STATUS"
+                android:textAllCaps="true"/>
+
             <com.google.android.material.card.MaterialCardView
                 style="@style/CardSurface"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/sp_4">
+                android:layout_height="wrap_content">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -255,7 +253,6 @@
                     android:orientation="vertical"
                     android:padding="@dimen/sp_4">
 
-                    <!-- Status header -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -270,61 +267,59 @@
 
                         <TextView
                             android:id="@+id/tvStatus"
-                            style="@style/TextBody"
+                            style="@style/IOS_Headline"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="@dimen/sp_2"
                             android:layout_weight="1"
-                            android:text="@string/status_idle"
-                            android:textStyle="bold"/>
+                            android:text="@string/status_idle"/>
 
                         <TextView
                             android:id="@+id/tvPercent"
-                            style="@style/TextBody"
+                            style="@style/IOS_Callout"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:fontFamily="monospace"
-                            android:textColor="@color/brand_primary"
+                            android:textColor="@color/ios_blue"
                             android:textStyle="bold"/>
                     </LinearLayout>
 
                     <com.google.android.material.progressindicator.LinearProgressIndicator
                         android:id="@+id/linearProgress"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
+                        android:layout_height="3dp"
                         android:layout_marginTop="@dimen/sp_3"
                         android:visibility="invisible"
-                        app:indicatorColor="@color/brand_primary"
-                        app:trackColor="@color/bg_surface_3"
-                        app:trackCornerRadius="@dimen/r_xs"/>
+                        app:indicatorColor="@color/ios_blue"
+                        app:trackColor="@color/ios_bg_tertiary"
+                        app:trackCornerRadius="2dp"
+                        app:trackThickness="3dp"/>
 
                     <TextView
                         android:id="@+id/tvProgress"
-                        style="@style/TextCaption"
+                        style="@style/IOS_Caption2"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/sp_2"
                         android:fontFamily="monospace"
                         android:text="Menunggu…"/>
 
-                    <!-- Cancel button -->
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnCancel"
-                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        style="@style/Widget.Material3.Button.TextButton"
                         android:layout_width="match_parent"
                         android:layout_height="44dp"
                         android:layout_marginTop="@dimen/sp_3"
                         android:text="@string/action_cancel"
-                        android:textColor="@color/status_error"
-                        android:visibility="gone"
-                        app:cornerRadius="@dimen/r_pill"
-                        app:strokeColor="@color/status_error"/>
+                        android:textAllCaps="false"
+                        android:textColor="@color/ios_red"
+                        android:visibility="gone"/>
 
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
                         android:layout_marginVertical="@dimen/sp_4"
-                        android:background="@color/border_subtle"/>
+                        android:background="@color/ios_separator"/>
 
                     <!-- Threads slider -->
                     <LinearLayout
@@ -334,7 +329,7 @@
                         android:orientation="horizontal">
 
                         <TextView
-                            style="@style/TextBody"
+                            style="@style/IOS_Body"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
@@ -342,13 +337,13 @@
 
                         <TextView
                             android:id="@+id/tvThreadCount"
-                            style="@style/TextBody"
+                            style="@style/IOS_Body"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:fontFamily="monospace"
-                            android:textColor="@color/brand_primary"
+                            android:textColor="@color/ios_blue"
                             android:textStyle="bold"
-                            android:text="4"/>
+                            android:text="8"/>
                     </LinearLayout>
 
                     <com.google.android.material.slider.Slider
@@ -356,21 +351,21 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:stepSize="1"
-                        android:value="4"
+                        android:value="8"
                         android:valueFrom="1"
                         android:valueTo="8"
+                        app:haloColor="@color/ios_blue"
                         app:labelBehavior="gone"
-                        app:thumbColor="@color/brand_primary"
-                        app:trackColorActive="@color/brand_primary"
-                        app:trackColorInactive="@color/bg_surface_3"/>
+                        app:thumbColor="@color/ios_blue"
+                        app:trackColorActive="@color/ios_blue"
+                        app:trackColorInactive="@color/ios_bg_tertiary"/>
 
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
                         android:layout_marginVertical="@dimen/sp_4"
-                        android:background="@color/border_subtle"/>
+                        android:background="@color/ios_separator"/>
 
-                    <!-- System stats -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -384,19 +379,21 @@
                             android:orientation="vertical">
 
                             <TextView
-                                style="@style/TextCaption"
+                                style="@style/IOS_Caption2"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="@string/label_cpu"/>
+                                android:text="@string/label_cpu"
+                                android:textAllCaps="true"/>
 
                             <TextView
                                 android:id="@+id/tvCpu"
-                                style="@style/TextBody"
+                                style="@style/IOS_Footnote"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
                                 android:fontFamily="monospace"
                                 android:text="—"
+                                android:textColor="@color/ios_label"
                                 android:textStyle="bold"/>
                         </LinearLayout>
 
@@ -407,19 +404,21 @@
                             android:orientation="vertical">
 
                             <TextView
-                                style="@style/TextCaption"
+                                style="@style/IOS_Caption2"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="@string/label_ram"/>
+                                android:text="@string/label_ram"
+                                android:textAllCaps="true"/>
 
                             <TextView
                                 android:id="@+id/tvRam"
-                                style="@style/TextBody"
+                                style="@style/IOS_Footnote"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
                                 android:fontFamily="monospace"
                                 android:text="—"
+                                android:textColor="@color/ios_label"
                                 android:textStyle="bold"/>
                         </LinearLayout>
 
@@ -430,33 +429,34 @@
                             android:orientation="vertical">
 
                             <TextView
-                                style="@style/TextCaption"
+                                style="@style/IOS_Caption2"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="@string/label_gpu"/>
+                                android:text="@string/label_gpu"
+                                android:textAllCaps="true"/>
 
                             <TextView
                                 android:id="@+id/tvGpu"
-                                style="@style/TextBody"
+                                style="@style/IOS_Footnote"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
                                 android:fontFamily="monospace"
                                 android:text="—"
+                                android:textColor="@color/ios_label"
                                 android:textStyle="bold"/>
                         </LinearLayout>
                     </LinearLayout>
 
                     <TextView
                         android:id="@+id/tvVulkan"
-                        style="@style/TextCaption"
+                        style="@style/IOS_Caption2"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/sp_3"
                         android:fontFamily="monospace"
                         android:text="Vulkan: —"/>
 
-                    <!-- Log toggle -->
                     <LinearLayout
                         android:id="@+id/logHeader"
                         android:layout_width="match_parent"
@@ -470,27 +470,27 @@
                         android:paddingVertical="@dimen/sp_2">
 
                         <TextView
-                            style="@style/TextLabel"
+                            style="@style/IOS_Footnote"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:text="@string/label_detail"
-                            android:textColor="@color/brand_primary"/>
+                            android:textColor="@color/ios_blue"/>
 
                         <TextView
                             android:id="@+id/logChevron"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="▸"
-                            android:textColor="@color/brand_primary"/>
+                            android:textColor="@color/ios_blue"/>
                     </LinearLayout>
 
                     <TextView
                         android:id="@+id/tvLog"
-                        style="@style/TextCaption"
+                        style="@style/IOS_Caption2"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:background="@color/bg_base"
+                        android:background="@color/ios_bg"
                         android:fontFamily="monospace"
                         android:maxLines="14"
                         android:padding="@dimen/sp_2"
@@ -499,44 +499,214 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Developer info -->
             <TextView
-                android:id="@+id/tvDeveloper"
-                style="@style/TextCaption"
+                style="@style/IOS_Caption2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/sp_6"
+                android:layout_marginTop="@dimen/sp_8"
                 android:layout_marginBottom="@dimen/sp_10"
+                android:alpha="0.5"
                 android:gravity="center"
-                android:text="@string/developer_info"
-                android:alpha="0.6"/>
+                android:text="@string/developer_info"/>
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
-    <!-- ═══ FAB (Add) ═══ -->
+    <!-- ═══ GALLERY TAB ═══ -->
+    <LinearLayout
+        android:id="@+id/tabGallery"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:orientation="vertical"
+        android:visibility="gone"
+        android:paddingHorizontal="@dimen/sp_4"
+        android:paddingTop="@dimen/sp_4"
+        app:layout_constraintTop_toBottomOf="@id/toolbar"
+        app:layout_constraintBottom_toTopOf="@id/bottomNav"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <TextView
+            style="@style/IOS_Footnote"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/sp_1"
+            android:text="@string/gallery_title"
+            android:textAllCaps="true"/>
+
+        <TextView
+            android:id="@+id/tvGalleryCount"
+            style="@style/IOS_Caption1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/sp_1"
+            android:layout_marginStart="@dimen/sp_1"
+            android:text="0 item"/>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvGallery"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_marginTop="@dimen/sp_4"
+            android:layout_weight="1"
+            android:clipToPadding="false"
+            android:paddingBottom="@dimen/sp_4"/>
+
+        <LinearLayout
+            android:id="@+id/galleryEmpty"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <ImageView
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:alpha="0.3"
+                android:src="@android:drawable/ic_menu_gallery"
+                app:tint="@color/ios_label_secondary"/>
+
+            <TextView
+                style="@style/IOS_Body"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/sp_3"
+                android:text="@string/gallery_empty"
+                android:textColor="@color/ios_label_secondary"/>
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- ═══ PROFILE TAB ═══ -->
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/tabProfile"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        android:visibility="gone"
+        android:paddingHorizontal="@dimen/sp_5"
+        android:paddingTop="@dimen/sp_6"
+        app:layout_constraintTop_toBottomOf="@id/toolbar"
+        app:layout_constraintBottom_toTopOf="@id/bottomNav"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
+
+            <FrameLayout
+                android:id="@+id/avatarContainer"
+                android:layout_width="@dimen/profile_avatar"
+                android:layout_height="@dimen/profile_avatar"
+                android:layout_marginTop="@dimen/sp_4"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:id="@+id/ivProfilePhoto"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/bg_avatar"
+                    android:contentDescription="@string/cd_profile_photo"
+                    android:scaleType="centerCrop"/>
+
+                <ImageView
+                    android:id="@+id/ivProfilePhotoDefault"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:padding="32dp"
+                    android:src="@android:drawable/ic_menu_myplaces"
+                    app:tint="@color/ios_label_secondary"/>
+
+                <ImageView
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_gravity="bottom|end"
+                    android:background="@drawable/bg_edit_fab"
+                    android:padding="8dp"
+                    android:src="@android:drawable/ic_menu_edit"
+                    app:tint="@color/ios_label"/>
+            </FrameLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilUsername"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/sp_8"
+                android:hint="@string/label_username"
+                app:boxStrokeColor="@color/ios_blue"
+                app:hintTextColor="@color/ios_label_secondary">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etUsername"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="@string/hint_username"
+                    android:inputType="textPersonName"
+                    android:maxLines="1"
+                    android:textColor="@color/ios_label"/>
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSaveProfile"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="@dimen/sp_4"
+                android:text="@string/action_save_profile"
+                android:textAllCaps="false"
+                android:textColor="@color/ios_label"
+                android:textSize="@dimen/ios_headline"
+                android:textStyle="bold"
+                app:backgroundTint="@color/ios_blue"
+                app:cornerRadius="@dimen/r_pill"
+                app:elevation="0dp"/>
+
+            <TextView
+                style="@style/IOS_Caption2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/sp_10"
+                android:layout_marginBottom="@dimen/sp_10"
+                android:alpha="0.5"
+                android:gravity="center"
+                android:text="@string/developer_info"/>
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- ═══ iOS FAB ═══ -->
     <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
         android:id="@+id/fabAdd"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="@dimen/sp_4"
         android:text="@string/action_add"
-        android:textColor="@color/md_on_primary"
-        app:backgroundTint="@color/brand_primary"
+        android:textAllCaps="false"
+        android:textColor="@color/ios_label"
+        android:textStyle="bold"
+        app:backgroundTint="@color/ios_blue"
+        app:cornerRadius="@dimen/r_pill"
+        app:elevation="0dp"
         app:icon="@android:drawable/ic_menu_camera"
-        app:iconTint="@color/md_on_primary"
+        app:iconTint="@color/ios_label"
         app:layout_constraintBottom_toTopOf="@id/bottomNav"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
 
-    <!-- ═══ BOTTOM NAVIGATION ═══ -->
+    <!-- ═══ iOS TAB BAR ═══ -->
     <LinearLayout
         android:id="@+id/bottomNav"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:background="@drawable/bg_bottom_nav"
+        android:elevation="8dp"
         android:fitsSystemWindows="true"
         android:orientation="horizontal"
-        android:paddingTop="@dimen/sp_3"
+        android:paddingTop="@dimen/sp_2"
         android:paddingBottom="@dimen/sp_3"
         android:weightSum="3"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -553,21 +723,23 @@
             android:focusable="true"
             android:gravity="center"
             android:orientation="vertical"
-            android:paddingVertical="@dimen/sp_2">
+            android:paddingVertical="@dimen/sp_1">
 
             <ImageView
+                android:id="@+id/ivNavHome"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:src="@android:drawable/ic_menu_gallery"
-                app:tint="@color/brand_primary"/>
+                app:tint="@color/ios_blue"/>
 
             <TextView
-                style="@style/TextCaption"
+                android:id="@+id/tvNavHome"
+                style="@style/IOS_Caption2"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
+                android:layout_marginTop="2dp"
                 android:text="@string/nav_home"
-                android:textColor="@color/brand_primary"/>
+                android:textColor="@color/ios_blue"/>
         </LinearLayout>
 
         <LinearLayout
@@ -580,24 +752,26 @@
             android:focusable="true"
             android:gravity="center"
             android:orientation="vertical"
-            android:paddingVertical="@dimen/sp_2">
+            android:paddingVertical="@dimen/sp_1">
 
             <ImageView
+                android:id="@+id/ivNavGallery"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:src="@android:drawable/ic_menu_sort_by_size"
-                app:tint="@color/text_secondary"/>
+                app:tint="@color/ios_label_secondary"/>
 
             <TextView
-                style="@style/TextCaption"
+                android:id="@+id/tvNavGallery"
+                style="@style/IOS_Caption2"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
+                android:layout_marginTop="2dp"
                 android:text="@string/nav_gallery"/>
         </LinearLayout>
 
         <LinearLayout
-            android:id="@+id/navSettings"
+            android:id="@+id/navProfile"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
@@ -606,20 +780,22 @@
             android:focusable="true"
             android:gravity="center"
             android:orientation="vertical"
-            android:paddingVertical="@dimen/sp_2">
+            android:paddingVertical="@dimen/sp_1">
 
             <ImageView
+                android:id="@+id/ivNavProfile"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:src="@android:drawable/ic_menu_preferences"
-                app:tint="@color/text_secondary"/>
+                android:src="@android:drawable/ic_menu_myplaces"
+                app:tint="@color/ios_label_secondary"/>
 
             <TextView
-                style="@style/TextCaption"
+                android:id="@+id/tvNavProfile"
+                style="@style/IOS_Caption2"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="@string/nav_settings"/>
+                android:layout_marginTop="2dp"
+                android:text="@string/nav_profile"/>
         </LinearLayout>
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

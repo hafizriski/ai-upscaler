@@ -6,7 +6,6 @@ import android.net.NetworkCapabilities
 import android.os.Build
 
 object NetworkUtils {
-
     fun isOnline(context: Context): Boolean {
         val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         return try {
@@ -15,13 +14,8 @@ object NetworkUtils {
                 val caps = cm.getNetworkCapabilities(network) ?: return false
                 caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
                     caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
-            } else {
-                @Suppress("DEPRECATION")
-                cm.activeNetworkInfo?.isConnected == true
-            }
-        } catch (_: Throwable) {
-            false
-        }
+            } else false
+        } catch (_: Throwable) { false }
     }
 
     fun isWifi(context: Context): Boolean {
@@ -31,18 +25,13 @@ object NetworkUtils {
                 val network = cm.activeNetwork ?: return false
                 val caps = cm.getNetworkCapabilities(network) ?: return false
                 caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
-            } else {
-                @Suppress("DEPRECATION")
-                cm.activeNetworkInfo?.type == ConnectivityManager.TYPE_WIFI
-            }
-        } catch (_: Throwable) {
-            false
-        }
+            } else false
+        } catch (_: Throwable) { false }
     }
 
     fun describe(context: Context): String = when {
-        !isOnline(context) -> "❌ Tidak ada koneksi"
-        isWifi(context) -> "📶 WiFi"
-        else -> "📱 Data seluler"
+        !isOnline(context) -> "Tidak ada koneksi"
+        isWifi(context) -> "WiFi"
+        else -> "Data seluler"
     }
 }

@@ -1,26 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <style name="Theme.AIUpscaler" parent="Theme.Material3.Dark.NoActionBar">
-        <!-- Colors -->
-        <item name="colorPrimary">@color/brand_primary</item>
-        <item name="colorOnPrimary">@color/md_on_primary</item>
-        <item name="colorPrimaryContainer">@color/brand_primary_variant</item>
-        <item name="colorOnPrimaryContainer">@color/md_on_primary</item>
-        <item name="android:colorBackground">@color/bg_base</item>
-        <item name="colorSurface">@color/bg_surface</item>
-        <item name="colorSurfaceVariant">@color/bg_surface_2</item>
-        <item name="colorOnSurface">@color/text_primary</item>
-        <item name="colorOnSurfaceVariant">@color/text_secondary</item>
-        <item name="colorOutline">@color/border_default</item>
 
-        <!-- Window -->
+    <style name="Theme.AIUpscaler" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">@color/ios_blue</item>
+        <item name="colorOnPrimary">@color/ios_label</item>
+        <item name="colorPrimaryContainer">@color/ios_blue</item>
+        <item name="colorOnPrimaryContainer">@color/ios_label</item>
+        <item name="android:colorBackground">@color/ios_bg</item>
+        <item name="colorSurface">@color/ios_bg_elevated</item>
+        <item name="colorSurfaceVariant">@color/ios_bg_secondary</item>
+        <item name="colorOnSurface">@color/ios_label</item>
+        <item name="colorOnSurfaceVariant">@color/ios_label_secondary</item>
+        <item name="colorOutline">@color/ios_separator</item>
+
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar" tools:targetApi="m">false</item>
         <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">false</item>
-        <item name="android:windowBackground">@color/bg_base</item>
+        <item name="android:windowBackground">@color/ios_bg</item>
 
-        <!-- Animation (iOS fluid) -->
         <item name="android:windowAnimationStyle">@style/WindowAnimation</item>
     </style>
 
@@ -31,55 +29,30 @@
         <item name="android:activityCloseExitAnimation">@anim/slide_out_right</item>
     </style>
 
-    <!-- Component styles -->
+    <!-- Components -->
     <style name="CardSurface" parent="Widget.Material3.CardView.Filled">
-        <item name="cardBackgroundColor">@color/bg_surface</item>
-        <item name="cardCornerRadius">@dimen/r_lg</item>
+        <item name="cardBackgroundColor">@color/ios_bg_elevated</item>
+        <item name="cardCornerRadius">@dimen/r_md</item>
         <item name="cardElevation">0dp</item>
-        <item name="strokeColor">@color/border_subtle</item>
-        <item name="strokeWidth">1dp</item>
+        <item name="strokeColor">@android:color/transparent</item>
+        <item name="strokeWidth">0dp</item>
     </style>
 
-    <style name="ChipPremium" parent="Widget.Material3.Chip.Filter">
-        <item name="chipBackgroundColor">@color/bg_surface_2</item>
-        <item name="chipStrokeColor">@color/border_default</item>
-        <item name="chipStrokeWidth">1dp</item>
-        <item name="android:textColor">@color/text_primary</item>
+    <style name="ChipIOS" parent="Widget.Material3.Chip.Filter">
+        <item name="chipBackgroundColor">@color/ios_fill_tertiary</item>
+        <item name="chipStrokeColor">@android:color/transparent</item>
+        <item name="chipStrokeWidth">0dp</item>
+        <item name="android:textColor">@color/ios_label</item>
         <item name="chipMinHeight">36dp</item>
-        <item name="android:textSize">@dimen/text_label</item>
+        <item name="android:textSize">@dimen/ios_subheadline</item>
+        <item name="android:textAllCaps">false</item>
     </style>
 
-    <style name="TextDisplay">
-        <item name="android:textSize">@dimen/text_display</item>
-        <item name="android:textColor">@color/text_primary</item>
-        <item name="android:textStyle">bold</item>
-        <item name="android:letterSpacing">-0.02</item>
-    </style>
-
-    <style name="TextTitle">
-        <item name="android:textSize">@dimen/text_title</item>
-        <item name="android:textColor">@color/text_primary</item>
-        <item name="android:textStyle">bold</item>
-    </style>
-
-    <style name="TextHeadline">
-        <item name="android:textSize">@dimen/text_headline</item>
-        <item name="android:textColor">@color/text_primary</item>
-        <item name="android:textStyle">bold</item>
-    </style>
-
-    <style name="TextBody">
-        <item name="android:textSize">@dimen/text_body</item>
-        <item name="android:textColor">@color/text_primary</item>
-    </style>
-
-    <style name="TextLabel">
-        <item name="android:textSize">@dimen/text_label</item>
-        <item name="android:textColor">@color/text_secondary</item>
-    </style>
-
-    <style name="TextCaption">
-        <item name="android:textSize">@dimen/text_caption</item>
-        <item name="android:textColor">@color/text_tertiary</item>
-    </style>
+    <!-- Compat aliases -->
+    <style name="TextDisplay"><item name="android:textSize">@dimen/ios_large_title</item><item name="android:textStyle">bold</item><item name="android:textColor">@color/ios_label</item></style>
+    <style name="TextTitle"><item name="android:textSize">@dimen/ios_title_2</item><item name="android:textStyle">bold</item><item name="android:textColor">@color/ios_label</item></style>
+    <style name="TextHeadline"><item name="android:textSize">@dimen/ios_headline</item><item name="android:textStyle">bold</item><item name="android:textColor">@color/ios_label</item></style>
+    <style name="TextBody"><item name="android:textSize">@dimen/ios_body</item><item name="android:textColor">@color/ios_label</item></style>
+    <style name="TextLabel"><item name="android:textSize">@dimen/ios_footnote</item><item name="android:textColor">@color/ios_label_secondary</item></style>
+    <style name="TextCaption"><item name="android:textSize">@dimen/ios_caption_1</item><item name="android:textColor">@color/ios_label_secondary</item></style>
 </resources>

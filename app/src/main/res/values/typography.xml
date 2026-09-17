@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="IOS_LargeTitle" parent="">
+        <item name="android:textSize">@dimen/ios_large_title</item>
+        <item name="android:textColor">@color/ios_label</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">-0.02</item>
+    </style>
+
+    <style name="IOS_Title1" parent="">
+        <item name="android:textSize">@dimen/ios_title_1</item>
+        <item name="android:textColor">@color/ios_label</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">-0.02</item>
+    </style>
+
+    <style name="IOS_Title2" parent="">
+        <item name="android:textSize">@dimen/ios_title_2</item>
+        <item name="android:textColor">@color/ios_label</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">-0.01</item>
+    </style>
+
+    <style name="IOS_Title3" parent="">
+        <item name="android:textSize">@dimen/ios_title_3</item>
+        <item name="android:textColor">@color/ios_label</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="IOS_Headline" parent="">
+        <item name="android:textSize">@dimen/ios_headline</item>
+        <item name="android:textColor">@color/ios_label</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="IOS_Body" parent="">
+        <item name="android:textSize">@dimen/ios_body</item>
+        <item name="android:textColor">@color/ios_label</item>
+    </style>
+
+    <style name="IOS_Callout" parent="">
+        <item name="android:textSize">@dimen/ios_callout</item>
+        <item name="android:textColor">@color/ios_label</item>
+    </style>
+
+    <style name="IOS_Subheadline" parent="">
+        <item name="android:textSize">@dimen/ios_subheadline</item>
+        <item name="android:textColor">@color/ios_label_secondary</item>
+    </style>
+
+    <style name="IOS_Footnote" parent="">
+        <item name="android:textSize">@dimen/ios_footnote</item>
+        <item name="android:textColor">@color/ios_label_secondary</item>
+    </style>
+
+    <style name="IOS_Caption1" parent="">
+        <item name="android:textSize">@dimen/ios_caption_1</item>
+        <item name="android:textColor">@color/ios_label_secondary</item>
+    </style>
+
+    <style name="IOS_Caption2" parent="">
+        <item name="android:textSize">@dimen/ios_caption_2</item>
+        <item name="android:textColor">@color/ios_label_tertiary</item>
+    </style>
+</resources>

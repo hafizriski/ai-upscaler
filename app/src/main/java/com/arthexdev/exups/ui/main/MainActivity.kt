@@ -10,21 +10,27 @@ import android.os.Handler
 import android.os.Looper
 import android.view.HapticFeedbackConstants
 import android.view.View
-import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.OvershootInterpolator
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
+import androidx.dynamicanimation.animation.DynamicAnimation
+import androidx.dynamicanimation.animation.SpringAnimation
+import androidx.dynamicanimation.animation.SpringForce
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.recyclerview.widget.GridLayoutManager
 import com.arthexdev.exups.R
+import com.arthexdev.exups.data.repository.GalleryRepository
+import com.arthexdev.exups.data.repository.ProfileRepository
 import com.arthexdev.exups.databinding.ActivityMainBinding
 import com.arthexdev.exups.ml.engine.Backend
 import com.arthexdev.exups.ml.engine.ModelRegistry
 import com.arthexdev.exups.ml.engine.ModelSpec
+import com.arthexdev.exups.ui.gallery.GalleryAdapter
 import com.arthexdev.exups.util.ImageSaver
 import com.arthexdev.exups.util.PermissionHelper
 import com.arthexdev.exups.util.SystemMonitor
@@ -33,7 +39,6 @@ import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.File
 
 class MainActivity : AppCompatActivity() {
 
@@ -42,8 +47,23 @@ class MainActivity : AppCompatActivity() {
     private val ui = Handler(Looper.getMainLooper())
     private val chipModelMap = mutableMapOf<String, Chip>()
 
+    private lateinit var profileRepo: ProfileRepository
+    private lateinit var galleryRepo: GalleryRepository
+    private lateinit var galleryAdapter: GalleryAdapter
+
+    private var currentTab = 0
+
     private val pick = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         uri?.let { loadUri(it) }
+    }
+
+    private val pickPhoto = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        uri?.let {
+            if (profileRepo.savePhotoFromUri(it)) {
+                loadProfilePhoto()
+                toast("Foto profil tersimpan")
+            } else toast("Gagal simpan foto")
+        }
     }
 
     private val requestPermission = registerForActivityResult(
@@ -54,7 +74,7 @@ class MainActivity : AppCompatActivity() {
 
     private val systemTicker = object : Runnable {
         override fun run() {
-            refreshSystem()
+            if (currentTab == 0) refreshSystem()
             ui.postDelayed(this, 1500)
         }
     }
@@ -64,35 +84,109 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        profileRepo = ProfileRepository(this)
+        galleryRepo = GalleryRepository(this)
+
+        setupGallery()
+        setupProfile()
         setupListeners()
         setupAnimations()
         observeState()
         ensurePermissions()
+        showTab(0)
         ui.post(systemTicker)
     }
 
+    private fun setupGallery() {
+        galleryAdapter = GalleryAdapter { toast("Tap: ${it.name}") }
+        binding.rvGallery.layoutManager = GridLayoutManager(this, 2)
+        binding.rvGallery.adapter = galleryAdapter
+        refreshGallery()
+    }
+
+    private fun refreshGallery() {
+        val items = galleryRepo.listItems()
+        galleryAdapter.update(items)
+        binding.tvGalleryCount.text = "${items.size} item"
+        binding.galleryEmpty.visibility = if (items.isEmpty()) View.VISIBLE else View.GONE
+        binding.rvGallery.visibility = if (items.isEmpty()) View.GONE else View.VISIBLE
+    }
+
+    private fun setupProfile() {
+        binding.etUsername.setText(profileRepo.getUsername())
+        loadProfilePhoto()
+
+        binding.avatarContainer.setOnClickListener {
+            it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+            pickPhoto.launch("image/*")
+        }
+
+        binding.btnSaveProfile.setOnClickListener {
+            it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+            val username = binding.etUsername.text?.toString()?.trim() ?: ""
+            if (username.isEmpty()) {
+                toast("Username tidak boleh kosong")
+                return@setOnClickListener
+            }
+            profileRepo.setUsername(username)
+            springScale(it)
+            Snackbar.make(binding.root, getString(R.string.profile_saved), Snackbar.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun loadProfilePhoto() {
+        val bmp = profileRepo.getPhoto()
+        if (bmp != null) {
+            binding.ivProfilePhoto.setImageBitmap(bmp)
+            binding.ivProfilePhoto.visibility = View.VISIBLE
+            binding.ivProfilePhotoDefault.visibility = View.GONE
+        } else {
+            binding.ivProfilePhoto.visibility = View.GONE
+            binding.ivProfilePhotoDefault.visibility = View.VISIBLE
+        }
+    }
+
     private fun setupAnimations() {
-        // FAB entrance animation
+        // iOS spring animation for FAB
         binding.fabAdd.scaleX = 0f
         binding.fabAdd.scaleY = 0f
-        binding.fabAdd.animate()
-            .scaleX(1f).scaleY(1f)
-            .setDuration(400)
-            .setInterpolator(OvershootInterpolator(1.2f))
-            .start()
+        SpringAnimation(binding.fabAdd, DynamicAnimation.SCALE_X, 1f).apply {
+            spring = SpringForce(1f).apply {
+                dampingRatio = SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY
+                stiffness = SpringForce.STIFFNESS_LOW
+            }
+            setStartValue(0f)
+            start()
+        }
+        SpringAnimation(binding.fabAdd, DynamicAnimation.SCALE_Y, 1f).apply {
+            spring = SpringForce(1f).apply {
+                dampingRatio = SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY
+                stiffness = SpringForce.STIFFNESS_LOW
+            }
+            setStartValue(0f)
+            start()
+        }
 
         // Bottom nav slide up
         binding.bottomNav.translationY = 100f
-        binding.bottomNav.alpha = 0f
-        binding.bottomNav.animate()
-            .translationY(0f).alpha(1f)
-            .setDuration(400)
-            .setInterpolator(AccelerateDecelerateInterpolator())
-            .start()
+        binding.bottomNav.animate().translationY(0f).alpha(1f).setDuration(400).start()
+    }
 
-        // Toolbar fade in
-        binding.toolbar.alpha = 0f
-        binding.toolbar.animate().alpha(1f).setDuration(300).start()
+    private fun springScale(v: View) {
+        SpringAnimation(v, DynamicAnimation.SCALE_X, 1f).apply {
+            spring = SpringForce(1f).apply {
+                dampingRatio = SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY
+            }
+            setStartValue(0.92f)
+            start()
+        }
+        SpringAnimation(v, DynamicAnimation.SCALE_Y, 1f).apply {
+            spring = SpringForce(1f).apply {
+                dampingRatio = SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY
+            }
+            setStartValue(0.92f)
+            start()
+        }
     }
 
     private fun ensurePermissions() {
@@ -107,41 +201,34 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupListeners() {
-        // FAB
         binding.fabAdd.setOnClickListener {
             it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-            it.animate().scaleX(0.9f).scaleY(0.9f).setDuration(100).withEndAction {
-                it.animate().scaleX(1f).scaleY(1f).setDuration(100).start()
-            }.start()
-
+            springScale(it)
             if (!PermissionHelper.hasStoragePermission(this)) {
                 requestPermission.launch(PermissionHelper.getRequiredPermissions())
-            } else {
-                pick.launch("image/*")
-            }
+            } else pick.launch("image/*")
         }
 
-        // Bottom nav (placeholder untuk sekarang)
         binding.navHome.setOnClickListener {
             it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-            toast("Home")
+            showTab(0)
         }
         binding.navGallery.setOnClickListener {
             it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-            toast("Gallery — coming soon")
+            showTab(1)
+            refreshGallery()
         }
-        binding.navSettings.setOnClickListener {
+        binding.navProfile.setOnClickListener {
             it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-            toast("Settings — coming soon")
+            showTab(2)
+            loadProfilePhoto()
         }
 
-        // Cancel
         binding.btnCancel.setOnClickListener {
             vm.cancel()
             toast("Dibatalkan")
         }
 
-        // Thread slider
         val s = vm.state.value
         binding.sliderThreads.valueTo = s.maxThreads.toFloat().coerceAtLeast(1f)
         binding.sliderThreads.valueFrom = 1f
@@ -155,7 +242,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Log toggle
         binding.logHeader.setOnClickListener {
             val visible = binding.tvLog.visibility == View.VISIBLE
             if (visible) {
@@ -171,6 +257,47 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun showTab(index: Int) {
+        currentTab = index
+
+        binding.tabHome.visibility = View.GONE
+        binding.tabGallery.visibility = View.GONE
+        binding.tabProfile.visibility = View.GONE
+
+        binding.ivNavHome.setColorFilter(getColor(R.color.ios_label_secondary))
+        binding.tvNavHome.setTextColor(getColor(R.color.ios_label_secondary))
+        binding.ivNavGallery.setColorFilter(getColor(R.color.ios_label_secondary))
+        binding.tvNavGallery.setTextColor(getColor(R.color.ios_label_secondary))
+        binding.ivNavProfile.setColorFilter(getColor(R.color.ios_label_secondary))
+        binding.tvNavProfile.setTextColor(getColor(R.color.ios_label_secondary))
+
+        when (index) {
+            0 -> {
+                binding.tabHome.visibility = View.VISIBLE
+                binding.fabAdd.visibility = View.VISIBLE
+                binding.ivNavHome.setColorFilter(getColor(R.color.ios_blue))
+                binding.tvNavHome.setTextColor(getColor(R.color.ios_blue))
+            }
+            1 -> {
+                binding.tabGallery.visibility = View.VISIBLE
+                binding.fabAdd.visibility = View.GONE
+                binding.ivNavGallery.setColorFilter(getColor(R.color.ios_blue))
+                binding.tvNavGallery.setTextColor(getColor(R.color.ios_blue))
+                refreshGallery()
+            }
+            2 -> {
+                binding.tabProfile.visibility = View.VISIBLE
+                binding.fabAdd.visibility = View.GONE
+                binding.ivNavProfile.setColorFilter(getColor(R.color.ios_blue))
+                binding.tvNavProfile.setTextColor(getColor(R.color.ios_blue))
+            }
+        }
+
+        val target = when (index) { 0 -> binding.tabHome; 1 -> binding.tabGallery; else -> binding.tabProfile }
+        target.alpha = 0f
+        target.animate().alpha(1f).setDuration(200).start()
+    }
+
     private fun buildModelChips(models: List<ModelSpec>, selectedId: String) {
         binding.chipGroupModels.removeAllViews()
         chipModelMap.clear()
@@ -181,7 +308,7 @@ class MainActivity : AppCompatActivity() {
                 isCheckable = true
                 isChecked = spec.id == selectedId
                 isChipIconVisible = false
-                textSize = 12f
+                textSize = 15f
                 setOnClickListener {
                     it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                     vm.setModel(spec.id)
@@ -213,18 +340,15 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 vm.state.collect { s ->
-                    // Preview
                     binding.imagePreview.setImageBitmap(s.result ?: s.source)
                     binding.previewPlaceholder.visibility =
                         if (s.result == null && s.source == null) View.VISIBLE else View.GONE
 
-                    // Info
                     binding.tvInfo.text = s.info
-
-                    // Status
                     binding.tvStatus.text = s.statusText
                     binding.tvPercent.text = if (s.progressPercent > 0) "${s.progressPercent}%" else ""
                     binding.tvProgress.text = s.progressText
+
                     binding.statusDot.setBackgroundResource(
                         when (s.statusKind) {
                             StatusKind.IDLE -> R.drawable.dot_idle
@@ -236,19 +360,15 @@ class MainActivity : AppCompatActivity() {
                         }
                     )
 
-                    // Progress
                     val busy = s.processing || s.downloading
                     if (busy) {
                         binding.linearProgress.visibility = View.VISIBLE
                         binding.linearProgress.isIndeterminate = s.progressPercent == 0
                         binding.linearProgress.setProgressCompat(s.progressPercent, true)
-
                         binding.progressOverlay.visibility = View.VISIBLE
                         binding.progressScrim.visibility = View.VISIBLE
                         binding.circularProgress.isIndeterminate = s.progressPercent == 0
-                        if (s.progressPercent > 0) {
-                            binding.circularProgress.setProgressCompat(s.progressPercent, true)
-                        }
+                        if (s.progressPercent > 0) binding.circularProgress.setProgressCompat(s.progressPercent, true)
                     } else if (s.progressPercent > 0 && s.progressPercent < 100) {
                         binding.linearProgress.visibility = View.VISIBLE
                         binding.linearProgress.isIndeterminate = false
@@ -261,36 +381,35 @@ class MainActivity : AppCompatActivity() {
                         binding.progressScrim.visibility = View.GONE
                     }
 
-                    // Cancel button
                     binding.btnCancel.visibility = if (s.canCancel) View.VISIBLE else View.GONE
-
-                    // FAB enable state
                     binding.fabAdd.isEnabled = !busy
 
-                    // Threads
                     binding.tvThreadCount.text = s.threadCount.toString()
                     binding.sliderThreads.isEnabled = !busy
 
-                    // Log
                     binding.tvLog.text = s.log.takeLast(14).joinToString("\n")
 
-                    // Model chips
                     if (binding.chipGroupModels.childCount != s.allModels.size) {
                         buildModelChips(s.allModels, s.selectedModelId)
-                    } else {
-                        chipModelMap[s.selectedModelId]?.isChecked = true
-                    }
+                    } else chipModelMap[s.selectedModelId]?.isChecked = true
                     updateModelDetail(s.selectedModel)
                     binding.chipGroupModels.isEnabled = !busy
 
-                    // GPU
                     s.gpuInfo?.let { gpu ->
                         binding.tvGpu.text = if (gpu.isAdreno && gpu.adrenoSeries != "unknown")
                             "Adreno ${gpu.adrenoSeries}" else "GPU"
                         binding.tvVulkan.text = if (gpu.supportsVulkan)
-                            "Vulkan: API ${gpu.vulkanApiLevel}" +
-                                if (gpu.supportsFp16) " · FP16" else ""
+                            "Vulkan: API ${gpu.vulkanApiLevel}" + if (gpu.supportsFp16) " · FP16" else ""
                         else "Vulkan: tidak didukung"
+                    }
+
+                    // Save hasil ke gallery lokal (sekali per hasil)
+                    if (s.result != null && s.statusKind == StatusKind.DONE && !s.processing) {
+                        if (binding.imagePreview.tag != s.result) {
+                            binding.imagePreview.tag = s.result
+                            galleryRepo.saveResult(s.result)
+                            refreshGallery()
+                        }
                     }
                 }
             }
@@ -314,7 +433,6 @@ class MainActivity : AppCompatActivity() {
                 if (bmp == null) withContext(Dispatchers.Main) { toast("Gagal memuat") }
                 else withContext(Dispatchers.Main) {
                     vm.setSource(bmp)
-                    // Animate preview
                     binding.imagePreview.alpha = 0f
                     binding.imagePreview.animate().alpha(1f).setDuration(300).start()
                 }

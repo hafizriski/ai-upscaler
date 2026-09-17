@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="@dimen/sp_1"
+    app:cardBackgroundColor="@color/ios_bg_elevated"
+    app:cardCornerRadius="@dimen/r_md"
+    app:cardElevation="0dp">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="160dp">
+
+        <ImageView
+            android:id="@+id/ivGalleryItem"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:contentDescription="Gallery item"
+            android:scaleType="centerCrop"/>
+
+        <TextView
+            android:id="@+id/tvGalleryDate"
+            style="@style/IOS_Caption2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|start"
+            android:layout_margin="@dimen/sp_2"
+            android:background="#88000000"
+            android:paddingHorizontal="6dp"
+            android:paddingVertical="2dp"
+            android:text="—"
+            android:textColor="@color/ios_label"/>
+    </FrameLayout>
+</com.google.android.material.card.MaterialCardView>

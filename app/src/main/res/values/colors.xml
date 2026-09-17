@@ -1,51 +1,75 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Brand -->
-    <color name="brand_primary">#6366F1</color>
-    <color name="brand_primary_variant">#4F46E5</color>
-    <color name="brand_secondary">#8B5CF6</color>
-    <color name="brand_accent">#06B6D4</color>
+    <!-- iOS System colors (dark mode) -->
+    <color name="ios_black">#000000</color>
+    <color name="ios_bg">#000000</color>
+    <color name="ios_bg_elevated">#1C1C1E</color>
+    <color name="ios_bg_secondary">#2C2C2E</color>
+    <color name="ios_bg_tertiary">#3A3A3C</color>
 
-    <!-- Surfaces (dark) -->
-    <color name="bg_base">#0A0A0F</color>
-    <color name="bg_surface">#14141A</color>
-    <color name="bg_surface_2">#1C1C24</color>
-    <color name="bg_surface_3">#262630</color>
-    <color name="bg_elevated">#2E2E3A</color>
+    <color name="ios_separator">#38383A</color>
+    <color name="ios_separator_opaque">#545458</color>
 
-    <!-- Text -->
-    <color name="text_primary">#F5F5F7</color>
-    <color name="text_secondary">#A1A1AA</color>
-    <color name="text_tertiary">#71717A</color>
-    <color name="text_disabled">#3F3F46</color>
+    <color name="ios_label">#FFFFFF</color>
+    <color name="ios_label_secondary">#EBEBF599</color>
+    <color name="ios_label_tertiary">#EBEBF54D</color>
+    <color name="ios_label_quaternary">#EBEBF52E</color>
 
-    <!-- Borders -->
-    <color name="border_subtle">#1F1F2A</color>
-    <color name="border_default">#2A2A38</color>
-    <color name="border_strong">#3F3F50</color>
+    <color name="ios_fill_primary">#7878805C</color>
+    <color name="ios_fill_secondary">#78788052</color>
+    <color name="ios_fill_tertiary">#7676803D</color>
 
-    <!-- Status -->
-    <color name="status_idle">#71717A</color>
-    <color name="status_running">#F59E0B</color>
-    <color name="status_downloading">#3B82F6</color>
-    <color name="status_done">#10B981</color>
-    <color name="status_error">#EF4444</color>
+    <!-- iOS Blue (system blue) -->
+    <color name="ios_blue">#0A84FF</color>
+    <color name="ios_blue_dark">#0066CC</color>
 
-    <!-- Accents -->
-    <color name="overlay_scrim">#CC000000</color>
-    <color name="skeleton_base">#1F1F2A</color>
-    <color name="skeleton_highlight">#2A2A38</color>
+    <!-- iOS status colors -->
+    <color name="ios_green">#30D158</color>
+    <color name="ios_orange">#FF9F0A</color>
+    <color name="ios_red">#FF453A</color>
+    <color name="ios_purple">#BF5AF2</color>
+    <color name="ios_pink">#FF375F</color>
 
-    <!-- Legacy mapping (kompatibilitas) -->
-    <color name="md_primary">@color/brand_primary</color>
-    <color name="md_primary_dark">@color/brand_secondary</color>
+    <!-- Status dots -->
+    <color name="status_idle">#8E8E93</color>
+    <color name="status_running">@color/ios_orange</color>
+    <color name="status_downloading">@color/ios_blue</color>
+    <color name="status_done">@color/ios_green</color>
+    <color name="status_error">@color/ios_red</color>
+
+    <!-- Legacy mapping -->
+    <color name="brand_primary">@color/ios_blue</color>
+    <color name="brand_primary_variant">@color/ios_blue_dark</color>
+    <color name="brand_secondary">@color/ios_purple</color>
+
+    <color name="bg_base">@color/ios_bg</color>
+    <color name="bg_surface">@color/ios_bg_elevated</color>
+    <color name="bg_surface_2">@color/ios_bg_secondary</color>
+    <color name="bg_surface_3">@color/ios_bg_tertiary</color>
+
+    <color name="text_primary">@color/ios_label</color>
+    <color name="text_secondary">@color/ios_label_secondary</color>
+    <color name="text_tertiary">@color/ios_label_tertiary</color>
+
+    <color name="border_subtle">@color/ios_separator</color>
+    <color name="border_default">@color/ios_separator_opaque</color>
+
+    <color name="overlay_scrim">#99000000</color>
+    <color name="skeleton_base">#1C1C1E</color>
+    <color name="skeleton_highlight">#2C2C2E</color>
+
+    <!-- Material legacy -->
+    <color name="md_primary">@color/ios_blue</color>
+    <color name="md_primary_dark">@color/ios_purple</color>
     <color name="md_on_primary">#FFFFFF</color>
-    <color name="md_surface">@color/bg_surface</color>
-    <color name="md_surface_variant">@color/bg_surface_2</color>
-    <color name="md_on_surface">@color/text_primary</color>
-    <color name="md_on_surface_variant">@color/text_secondary</color>
-    <color name="md_background">@color/bg_base</color>
-    <color name="md_outline">@color/border_default</color>
-    <color name="md_on_primary_container">#6366F1</color>
-    <color name="md_primary_container">#6366F1</color>
+    <color name="md_surface">@color/ios_bg_elevated</color>
+    <color name="md_surface_variant">@color/ios_bg_secondary</color>
+    <color name="md_on_surface">@color/ios_label</color>
+    <color name="md_on_surface_variant">@color/ios_label_secondary</color>
+    <color name="md_background">@color/ios_bg</color>
+    <color name="md_outline">@color/ios_separator</color>
+    <color name="md_primary_container">@color/ios_blue</color>
+    <color name="md_on_primary_container">@color/ios_label</color>
+    <color name="md_secondary_container">@color/ios_bg_secondary</color>
+    <color name="md_on_secondary_container">@color/ios_label</color>
 </resources>
