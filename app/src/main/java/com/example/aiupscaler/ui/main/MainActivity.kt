@@ -19,6 +19,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.example.aiupscaler.R
 import com.example.aiupscaler.databinding.ActivityMainBinding
 import com.example.aiupscaler.ml.engine.Backend
+import com.example.aiupscaler.ml.engine.ModelRegistry
 import com.example.aiupscaler.ml.engine.ModelSpec
 import com.example.aiupscaler.util.ImageSaver
 import com.example.aiupscaler.util.PermissionHelper
@@ -75,14 +76,16 @@ class MainActivity : AppCompatActivity() {
                 requestPermission.launch(PermissionHelper.getRequiredPermissions())
             } else pick.launch("image/*")
         }
+        // Gunakan ensureModelAndUpscale — auto download kalau model belum ada
         binding.btnUpscale.setOnClickListener {
-            if (vm.state.value.source == null) toast("Pilih gambar dulu") else vm.upscale()
+            if (vm.state.value.source == null) toast("Pilih gambar dulu")
+            else vm.ensureModelAndUpscale()
         }
         binding.btnSave.setOnClickListener { saveResult() }
         binding.btnShare.setOnClickListener { shareResult() }
         binding.btnCancel.setOnClickListener {
             vm.cancel()
-            toast("Proses dibatalkan")
+            toast("Dibatalkan")
         }
 
         binding.toggleBackend.addOnButtonCheckedListener { _, id, checked ->
@@ -114,8 +117,9 @@ class MainActivity : AppCompatActivity() {
         binding.chipGroupModels.removeAllViews()
         chipModelMap.clear()
         models.forEach { spec ->
+            val ready = ModelRegistry.isReady(this, spec)
             val chip = Chip(this).apply {
-                text = spec.displayName
+                text = "${spec.displayName} ${if (ready) "✅" else "⬇"}"
                 isCheckable = true
                 isChecked = spec.id == selectedId
                 isChipIconVisible = false
@@ -136,7 +140,8 @@ class MainActivity : AppCompatActivity() {
             binding.chipSpeed.text = "—"
             return
         }
-        binding.tvModelName.text = spec.displayName
+        val ready = ModelRegistry.isReady(this, spec)
+        binding.tvModelName.text = spec.displayName + if (ready) " ✅" else " (perlu download)"
         binding.tvModelDesc.text = spec.description
         binding.chipScale.text = "×${spec.scale}"
         binding.chipSize.text = "${spec.approxSizeMb} MB"
@@ -156,13 +161,14 @@ class MainActivity : AppCompatActivity() {
                         when (s.statusKind) {
                             StatusKind.IDLE -> R.drawable.dot_idle
                             StatusKind.RUNNING -> R.drawable.dot_running
+                            StatusKind.DOWNLOADING -> R.drawable.dot_running
                             StatusKind.DONE -> R.drawable.dot_done
                             StatusKind.ERROR -> R.drawable.dot_error
                             StatusKind.CANCELLED -> R.drawable.dot_idle
                         }
                     )
 
-                    if (s.processing) {
+                    if (s.processing || s.downloading) {
                         binding.linearProgress.visibility = View.VISIBLE
                         binding.linearProgress.isIndeterminate = s.progressPercent == 0
                         binding.linearProgress.setProgressCompat(s.progressPercent, true)
@@ -176,23 +182,23 @@ class MainActivity : AppCompatActivity() {
 
                     binding.btnCancel.visibility = if (s.canCancel) View.VISIBLE else View.GONE
 
-                    binding.btnUpscale.isEnabled = s.source != null && !s.processing
-                    binding.btnPick.isEnabled = !s.processing
+                    binding.btnUpscale.isEnabled = s.source != null && !s.processing && !s.downloading
+                    binding.btnPick.isEnabled = !s.processing && !s.downloading
                     binding.btnSave.isEnabled = s.result != null && !s.processing
                     binding.btnShare.isEnabled = s.result != null && !s.processing
-                    binding.toggleBackend.isEnabled = !s.processing
-                    binding.sliderThreads.isEnabled = !s.processing
+                    binding.toggleBackend.isEnabled = !s.processing && !s.downloading
+                    binding.sliderThreads.isEnabled = !s.processing && !s.downloading
                     binding.chipBackend.text = s.backend.label
                     binding.tvLog.text = s.log.takeLast(14).joinToString("\n")
                     binding.tvThreadCount.text = s.threadCount.toString()
 
-                    if (binding.chipGroupModels.childCount != s.availableModels.size) {
-                        buildModelChips(s.availableModels, s.selectedModelId)
+                    if (binding.chipGroupModels.childCount != s.allModels.size) {
+                        buildModelChips(s.allModels, s.selectedModelId)
                     } else {
                         chipModelMap[s.selectedModelId]?.isChecked = true
                     }
                     updateModelDetail(s.selectedModel)
-                    binding.chipGroupModels.isEnabled = !s.processing
+                    binding.chipGroupModels.isEnabled = !s.processing && !s.downloading
 
                     s.gpuInfo?.let { gpu ->
                         binding.tvGpu.text = if (gpu.isAdreno && gpu.adrenoSeries != "unknown")

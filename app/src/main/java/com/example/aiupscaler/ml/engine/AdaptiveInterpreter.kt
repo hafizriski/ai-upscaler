@@ -24,7 +24,7 @@ class AdaptiveInterpreter private constructor(
 
     init {
         state = inspectModel()
-        Telemetry.info("Interpreter", "Model loaded: ${state.describe()} | threads=$threadCount")
+        Telemetry.info("Interpreter", "Loaded: ${state.describe()} | threads=$threadCount")
     }
 
     private fun inspectModel(): InterpreterState {
@@ -115,10 +115,10 @@ class AdaptiveInterpreter private constructor(
     override fun close() { try { interpreter.close() } catch (_: Throwable) {} }
 
     companion object {
-        fun load(context: Context, assetName: String, backend: Backend, threadCount: Int = 0): AppResult<AdaptiveInterpreter> =
+        fun load(context: Context, spec: ModelSpec, backend: Backend, threadCount: Int = 0): AppResult<AdaptiveInterpreter> =
             runCatchingResult {
                 val opts = DelegateFactory.build(context, backend, threadCount)
-                val buffer = loadModelBuffer(context, assetName)
+                val buffer = loadModelBuffer(context, spec)
                 val threads = if (threadCount > 0) threadCount else GpuDetector.recommendedCpuThreads()
                 AdaptiveInterpreter(Interpreter(buffer, opts), threads)
             }.let { result ->
@@ -129,11 +129,24 @@ class AdaptiveInterpreter private constructor(
                 }
             }
 
-        private fun loadModelBuffer(context: Context, name: String): ByteBuffer {
-            context.assets.openFd(name).use { fd ->
+        private fun loadModelBuffer(context: Context, spec: ModelSpec): ByteBuffer {
+            // 1. Downloaded file (untuk x4plus)
+            val localFile = ModelDownloader.getLocalPath(context, spec.fileName)
+            if (localFile.exists() && localFile.length() > 1024) {
+                Telemetry.info("Interpreter", "Load dari storage: ${localFile.name}")
+                FileInputStream(localFile).use { fis ->
+                    return fis.channel.map(
+                        FileChannel.MapMode.READ_ONLY, 0, fis.channel.size()
+                    ).order(ByteOrder.nativeOrder())
+                }
+            }
+            // 2. Assets (untuk x4v3 bundled)
+            Telemetry.info("Interpreter", "Load dari assets: models/${spec.fileName}")
+            context.assets.openFd("models/${spec.fileName}").use { fd ->
                 FileInputStream(fd.fileDescriptor).use { fis ->
-                    return fis.channel.map(FileChannel.MapMode.READ_ONLY, fd.startOffset, fd.declaredLength)
-                        .order(ByteOrder.nativeOrder())
+                    return fis.channel.map(
+                        FileChannel.MapMode.READ_ONLY, fd.startOffset, fd.declaredLength
+                    ).order(ByteOrder.nativeOrder())
                 }
             }
         }

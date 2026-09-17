@@ -28,15 +28,15 @@ class UpscaleRepositoryImpl(private val context: Context) : UpscaleRepository {
         val startTime = System.currentTimeMillis()
         val spec = ModelRegistry.getById(request.modelId)
 
-        emit(ProgressEvent.Log("Model: ${spec.displayName} (${spec.approxSizeMb}MB)"))
+        emit(ProgressEvent.Log("Model: ${spec.displayName}"))
         emit(ProgressEvent.Log("Memuat interpreter…"))
 
         coroutineContext.ensureActive()
 
-        val loadResult = AdaptiveInterpreter.load(context, spec.assetName, request.backend, request.threadCount)
+        val loadResult = AdaptiveInterpreter.load(context, spec, request.backend, request.threadCount)
         when (loadResult) {
             is AppResult.Failure -> {
-                emit(ProgressEvent.Warning("Model ${spec.displayName} gagal, fallback bilinear"))
+                emit(ProgressEvent.Warning("Model gagal, fallback bilinear"))
                 return@withContext fallback(request, startTime, emit)
             }
             is AppResult.Success -> {

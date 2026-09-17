@@ -12,6 +12,7 @@ import com.example.aiupscaler.domain.model.UpscaleRequest
 import com.example.aiupscaler.domain.model.UpscaleResult
 import com.example.aiupscaler.domain.usecase.UpscaleImageUseCase
 import com.example.aiupscaler.ml.engine.Backend
+import com.example.aiupscaler.ml.engine.ModelDownloader
 import com.example.aiupscaler.ml.engine.ModelRegistry
 import com.example.aiupscaler.ml.engine.ModelSpec
 import com.example.aiupscaler.util.GpuDetector
@@ -23,7 +24,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-enum class StatusKind { IDLE, RUNNING, DONE, ERROR, CANCELLED }
+enum class StatusKind { IDLE, RUNNING, DOWNLOADING, DONE, ERROR, CANCELLED }
 
 data class MainUiState(
     val source: Bitmap? = null,
@@ -32,8 +33,9 @@ data class MainUiState(
     val threadCount: Int = 4,
     val maxThreads: Int = 8,
     val gpuInfo: GpuDetector.GpuInfo? = null,
-    val availableModels: List<ModelSpec> = emptyList(),
-    val selectedModelId: String = "x4plus",
+    val allModels: List<ModelSpec> = emptyList(),
+    val selectedModelId: String = "x4v3",
+    val selectedReady: Boolean = true,
     val statusText: String = "Siap",
     val statusKind: StatusKind = StatusKind.IDLE,
     val progressPercent: Int = 0,
@@ -41,11 +43,12 @@ data class MainUiState(
     val info: String = "Pilih gambar untuk memulai",
     val log: List<String> = emptyList(),
     val processing: Boolean = false,
+    val downloading: Boolean = false,
     val canCancel: Boolean = false,
     val modelAvailable: Boolean = true
 ) {
     val selectedModel: ModelSpec?
-        get() = availableModels.firstOrNull { it.id == selectedModelId }
+        get() = allModels.firstOrNull { it.id == selectedModelId }
 }
 
 class MainViewModel(app: Application) : AndroidViewModel(app) {
@@ -55,6 +58,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private val recommendedThreads: Int
     private val maxCores: Int
     private var processingJob: Job? = null
+    private var downloadJob: Job? = null
 
     init {
         ServiceLocator.init(app)
@@ -80,12 +84,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     val state: StateFlow<MainUiState> = _state.asStateFlow()
 
     init {
-        val available = ModelRegistry.getAvailable(getApplication())
+        val all = ModelRegistry.getAllForDisplay()
+        val default = all.firstOrNull { ModelRegistry.isReady(getApplication(), it) } ?: all.last()
         _state.update {
             it.copy(
-                availableModels = available,
-                selectedModelId = available.firstOrNull()?.id ?: "x4v3",
-                modelAvailable = available.isNotEmpty()
+                allModels = all,
+                selectedModelId = default.id,
+                selectedReady = ModelRegistry.isReady(getApplication(), default),
+                modelAvailable = true
             )
         }
     }
@@ -106,21 +112,24 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun setModel(modelId: String) {
-        if (_state.value.processing) return
+        if (_state.value.processing || _state.value.downloading) return
         val spec = ModelRegistry.getById(modelId)
+        val ready = ModelRegistry.isReady(getApplication(), spec)
         _state.update {
             it.copy(
                 selectedModelId = modelId,
-                log = (it.log + "Model: ${spec.displayName}").takeLast(40)
+                selectedReady = ready,
+                log = (it.log + "Model: ${spec.displayName} ${if (ready) "✅" else "(belum di-download)"}").takeLast(40)
             )
         }
     }
 
     fun cancel() {
         processingJob?.cancel()
+        downloadJob?.cancel()
         _state.update {
             it.copy(
-                processing = false, canCancel = false,
+                processing = false, downloading = false, canCancel = false,
                 statusText = "Dibatalkan", statusKind = StatusKind.CANCELLED,
                 progressText = "Dibatalkan oleh pengguna",
                 log = (it.log + "✗ Dibatalkan").takeLast(40),
@@ -129,10 +138,77 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** Auto-download model kalau belum ada, lalu upscale */
+    fun ensureModelAndUpscale() {
+        val s = _state.value
+        val spec = s.selectedModel ?: return
+        val src = s.source ?: return
+
+        if (ModelRegistry.isReady(getApplication(), spec)) {
+            upscale()
+        } else {
+            downloadThenUpscale(spec)
+        }
+    }
+
+    private fun downloadThenUpscale(spec: ModelSpec) {
+        if (_state.value.downloading) return
+
+        _state.update {
+            it.copy(
+                downloading = true, canCancel = true,
+                statusText = "Mengunduh model…",
+                statusKind = StatusKind.DOWNLOADING,
+                progressPercent = 0,
+                progressText = "0 MB / ${spec.approxSizeMb} MB",
+                log = (it.log + "↓ Download ${spec.displayName}").takeLast(40)
+            )
+        }
+
+        downloadJob = viewModelScope.launch {
+            val success = ModelDownloader.download(
+                context = getApplication(),
+                url = spec.remoteUrl,
+                fileName = spec.fileName,
+                expectedSize = spec.approxSizeMb * 1024L * 1024L
+            ) { downloaded, total, percent ->
+                val mbDone = downloaded / 1024 / 1024
+                val mbTotal = if (total > 0) total / 1024 / 1024 else spec.approxSizeMb.toLong()
+                _state.update {
+                    it.copy(
+                        progressPercent = percent.coerceIn(0, 100),
+                        progressText = "$mbDone MB / $mbTotal MB (${percent}%)"
+                    )
+                }
+            }
+
+            if (success) {
+                _state.update {
+                    it.copy(
+                        downloading = false, canCancel = false,
+                        selectedReady = true,
+                        log = (it.log + "✅ Download selesai").takeLast(40)
+                    )
+                }
+                upscale()
+            } else {
+                _state.update {
+                    it.copy(
+                        downloading = false, canCancel = false,
+                        statusText = "Download gagal",
+                        statusKind = StatusKind.ERROR,
+                        progressText = "Periksa koneksi internet",
+                        log = (it.log + "✗ Download gagal").takeLast(40)
+                    )
+                }
+            }
+        }
+    }
+
     fun upscale() {
         val s = _state.value
         val src = s.source ?: return
-        if (s.processing) return
+        if (s.processing || s.downloading) return
 
         _state.update {
             it.copy(processing = true, canCancel = true,
