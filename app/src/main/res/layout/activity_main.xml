@@ -4,22 +4,20 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/md_background"
-    android:fitsSystemWindows="false">
+    android:background="@color/md_background">
 
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/toolbar"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:background="@color/md_surface"
+        android:fitsSystemWindows="true"
         android:minHeight="?attr/actionBarSize"
-        android:paddingTop="0dp"
-        android:paddingBottom="0dp"
-        app:title="@string/app_name"
-        app:titleTextColor="@color/md_on_surface"
-        app:titleCentered="true"
-        app:contentInsetStartWithNavigation="0dp"
         app:contentInsetStart="0dp"
+        app:contentInsetStartWithNavigation="0dp"
+        app:title="@string/app_name"
+        app:titleCentered="true"
+        app:titleTextColor="@color/md_on_surface"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
@@ -41,7 +39,6 @@
             android:orientation="vertical"
             android:padding="@dimen/space_md">
 
-            <!-- PREVIEW CARD -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -50,7 +47,6 @@
                 app:cardElevation="0dp"
                 app:strokeColor="@color/md_outline"
                 app:strokeWidth="1dp">
-
                 <ImageView
                     android:id="@+id/imagePreview"
                     android:layout_width="match_parent"
@@ -71,7 +67,6 @@
                 android:textColor="@color/md_on_surface_variant"
                 android:textSize="12sp"/>
 
-            <!-- STATUS + CONFIG CARD -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -81,26 +76,22 @@
                 app:cardElevation="0dp"
                 app:strokeColor="@color/md_outline"
                 app:strokeWidth="1dp">
-
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:padding="@dimen/space_lg">
 
-                    <!-- Status row -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:gravity="center_vertical"
                         android:orientation="horizontal">
-
                         <View
                             android:id="@+id/statusDot"
                             android:layout_width="10dp"
                             android:layout_height="10dp"
                             android:background="@drawable/dot_idle"/>
-
                         <TextView
                             android:id="@+id/tvStatus"
                             android:layout_width="0dp"
@@ -111,7 +102,6 @@
                             android:textColor="@color/md_on_surface"
                             android:textSize="14sp"
                             android:textStyle="bold"/>
-
                         <TextView
                             android:id="@+id/tvPercent"
                             android:layout_width="wrap_content"
@@ -142,14 +132,12 @@
                         android:textColor="@color/md_on_surface_variant"
                         android:textSize="10sp"/>
 
-                    <!-- CPU THREADS SLIDER -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/space_md"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical">
-
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
                         <TextView
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
@@ -157,26 +145,25 @@
                             android:text="Threads CPU"
                             android:textColor="@color/md_on_surface_variant"
                             android:textSize="12sp"/>
-
                         <TextView
                             android:id="@+id/tvThreadCount"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:fontFamily="monospace"
+                            android:text="4"
                             android:textColor="@color/md_primary_dark"
                             android:textSize="14sp"
-                            android:textStyle="bold"
-                            android:text="4"/>
+                            android:textStyle="bold"/>
                     </LinearLayout>
 
                     <com.google.android.material.slider.Slider
                         android:id="@+id/sliderThreads"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:valueFrom="1"
-                        android:valueTo="8"
                         android:stepSize="1"
                         android:value="4"
+                        android:valueFrom="1"
+                        android:valueTo="8"
                         app:labelBehavior="gone"/>
 
                     <View
@@ -186,13 +173,11 @@
                         android:layout_marginBottom="@dimen/space_md"
                         android:background="@color/md_outline"/>
 
-                    <!-- SYSTEM STATS -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:weightSum="3">
-
                         <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
@@ -208,13 +193,13 @@
                                 android:id="@+id/tvCpu"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
                                 android:fontFamily="monospace"
                                 android:text="—"
                                 android:textColor="@color/md_on_surface"
                                 android:textSize="12sp"
                                 android:textStyle="bold"/>
                         </LinearLayout>
-
                         <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
@@ -230,13 +215,13 @@
                                 android:id="@+id/tvRam"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
                                 android:fontFamily="monospace"
                                 android:text="—"
                                 android:textColor="@color/md_on_surface"
                                 android:textSize="12sp"
                                 android:textStyle="bold"/>
                         </LinearLayout>
-
                         <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
@@ -245,13 +230,14 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="GPU"
+                                android:text="@string/label_gpu"
                                 android:textColor="@color/md_on_surface_variant"
                                 android:textSize="10sp"/>
                             <TextView
                                 android:id="@+id/tvGpu"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
                                 android:fontFamily="monospace"
                                 android:text="—"
                                 android:textColor="@color/md_on_surface"
@@ -260,16 +246,25 @@
                         </LinearLayout>
                     </LinearLayout>
 
+                    <TextView
+                        android:id="@+id/tvVulkan"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_sm"
+                        android:fontFamily="monospace"
+                        android:text="Vulkan: —"
+                        android:textColor="@color/md_on_surface_variant"
+                        android:textSize="10sp"/>
+
                     <com.google.android.material.chip.Chip
                         android:id="@+id/chipBackend"
                         style="@style/Widget.Material3.Chip.Assist"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/space_md"
+                        android:layout_marginTop="@dimen/space_sm"
                         android:clickable="false"
                         android:text="CPU"/>
 
-                    <!-- LOG TOGGLE -->
                     <LinearLayout
                         android:id="@+id/logHeader"
                         android:layout_width="match_parent"
@@ -282,7 +277,6 @@
                         android:orientation="horizontal"
                         android:paddingTop="@dimen/space_xs"
                         android:paddingBottom="@dimen/space_xs">
-
                         <TextView
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
@@ -290,7 +284,6 @@
                             android:text="@string/label_detail"
                             android:textColor="@color/md_primary_dark"
                             android:textSize="12sp"/>
-
                         <TextView
                             android:id="@+id/logChevron"
                             android:layout_width="wrap_content"
@@ -314,7 +307,6 @@
                         android:visibility="gone"/>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
-
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
@@ -323,6 +315,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:background="@color/md_surface"
+        android:fitsSystemWindows="true"
         android:orientation="vertical"
         android:paddingStart="@dimen/space_md"
         android:paddingEnd="@dimen/space_md"
@@ -338,7 +331,6 @@
             android:layout_height="wrap_content"
             app:selectionRequired="true"
             app:singleSelection="true">
-
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnGpu"
                 style="?attr/materialButtonOutlinedStyle"
@@ -347,7 +339,6 @@
                 android:layout_weight="1"
                 android:text="GPU"
                 android:textSize="12sp"/>
-
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnCpu"
                 style="?attr/materialButtonOutlinedStyle"
@@ -363,7 +354,6 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/space_sm"
             android:orientation="horizontal">
-
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnPick"
                 style="@style/Widget.Material3.Button.OutlinedButton"
@@ -374,7 +364,6 @@
                 android:text="@string/action_pick"
                 android:textSize="12sp"
                 app:cornerRadius="@dimen/radius_pill"/>
-
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnUpscale"
                 android:layout_width="0dp"
@@ -385,7 +374,6 @@
                 android:text="@string/action_upscale"
                 android:textSize="12sp"
                 app:cornerRadius="@dimen/radius_pill"/>
-
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnSave"
                 style="@style/Widget.Material3.Button.TonalButton"
@@ -397,7 +385,6 @@
                 android:text="@string/action_save"
                 android:textSize="12sp"
                 app:cornerRadius="@dimen/radius_pill"/>
-
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnShare"
                 style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"

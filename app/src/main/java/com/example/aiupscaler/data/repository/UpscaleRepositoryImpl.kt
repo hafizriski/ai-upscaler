@@ -3,7 +3,6 @@ package com.example.aiupscaler.data.repository
 import android.content.Context
 import com.example.aiupscaler.core.error.AppError
 import com.example.aiupscaler.core.result.AppResult
-import com.example.aiupscaler.core.telemetry.Telemetry
 import com.example.aiupscaler.domain.model.ProgressEvent
 import com.example.aiupscaler.domain.model.UpscaleRequest
 import com.example.aiupscaler.domain.model.UpscaleResult
@@ -32,9 +31,7 @@ class UpscaleRepositoryImpl(private val context: Context) : UpscaleRepository {
         val startTime = System.currentTimeMillis()
         emit(ProgressEvent.Log("Memuat model (threads=${request.threadCount})..."))
 
-        val loadResult = AdaptiveInterpreter.load(
-            context, MODEL_ASSET, request.backend, request.threadCount
-        )
+        val loadResult = AdaptiveInterpreter.load(context, MODEL_ASSET, request.backend, request.threadCount)
         when (loadResult) {
             is AppResult.Failure -> {
                 emit(ProgressEvent.Warning("AI tidak tersedia, fallback bilinear"))
@@ -72,23 +69,12 @@ class UpscaleRepositoryImpl(private val context: Context) : UpscaleRepository {
         }
     }
 
-    private fun fallback(
-        request: UpscaleRequest,
-        startTime: Long,
-        emit: (ProgressEvent) -> Unit
-    ): AppResult<UpscaleResult> {
+    private fun fallback(request: UpscaleRequest, startTime: Long, emit: (ProgressEvent) -> Unit): AppResult<UpscaleResult> {
         return try {
             emit(ProgressEvent.Log("Fallback bilinear 4×"))
             val out = BilinearUpscaler.upscale(request.sourceBitmap, 4)
-            val result = UpscaleResult(
-                bitmap = out,
-                originalWidth = request.sourceBitmap.width,
-                originalHeight = request.sourceBitmap.height,
-                scaleFactor = 4,
-                elapsedMs = System.currentTimeMillis() - startTime,
-                tilesProcessed = 1, tilesFailed = 0,
-                usedFallback = true, backend = "Bilinear"
-            )
+            val result = UpscaleResult(out, request.sourceBitmap.width, request.sourceBitmap.height,
+                4, System.currentTimeMillis() - startTime, 1, 0, true, "Bilinear")
             emit(ProgressEvent.Complete(result))
             AppResult.Success(result)
         } catch (e: Throwable) {

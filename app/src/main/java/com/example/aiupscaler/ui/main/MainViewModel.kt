@@ -24,8 +24,8 @@ data class MainUiState(
     val source: Bitmap? = null,
     val result: Bitmap? = null,
     val backend: Backend = Backend.CPU,
-    val threadCount: Int = 0,       // 0 = auto
-    val maxThreads: Int = 4,
+    val threadCount: Int = 4,
+    val maxThreads: Int = 8,
     val gpuInfo: GpuDetector.GpuInfo? = null,
     val statusText: String = "Siap",
     val statusKind: StatusKind = StatusKind.IDLE,
@@ -41,54 +41,48 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     private val useCase: UpscaleImageUseCase
     private val gpuInfo: GpuDetector.GpuInfo
+    private val recommendedThreads: Int
+    private val maxCores: Int
 
     init {
         ServiceLocator.init(app)
         useCase = ServiceLocator.provideUpscaleUseCase()
-        gpuInfo = GpuDetector.detect(app)
+        gpuInfo = GpuDetector.detect()
+        recommendedThreads = GpuDetector.recommendedCpuThreads()
+        maxCores = Runtime.getRuntime().availableProcessors().coerceAtLeast(1)
     }
 
     private val _state = MutableStateFlow(
         MainUiState(
             gpuInfo = gpuInfo,
-            maxThreads = Runtime.getRuntime().availableProcessors().coerceAtLeast(1),
-            threadCount = GpuDetector.recommendedCpuThreads()
+            maxThreads = maxCores,
+            threadCount = recommendedThreads,
+            log = listOf(
+                "GPU: ${gpuInfo.renderer}",
+                "Adreno: ${gpuInfo.adrenoSeries}",
+                "Vulkan: ${if (gpuInfo.supportsVulkan) "✅ API ${gpuInfo.vulkanApiLevel}" else "❌"}",
+                "Rekomendasi: ${gpuInfo.recommendedBackend}",
+                "CPU threads: $recommendedThreads"
+            )
         )
     )
     val state: StateFlow<MainUiState> = _state.asStateFlow()
 
-    init {
-        _state.update { it.copy(modelAvailable = useCase.isModelAvailable()) }
-        // Log GPU info ke log
-        _state.update {
-            it.copy(log = listOf(
-                "GPU: ${gpuInfo.renderer}",
-                "Vulkan: ${if (gpuInfo.supportsVulkan) "✅ (API ${gpuInfo.vulkanApiLevel})" else "❌"}",
-                "Adreno: ${gpuInfo.adrenoSeries}",
-                "Rekomendasi: ${gpuInfo.recommendedBackend}",
-                "CPU threads: ${GpuDetector.recommendedCpuThreads()}"
-            ))
-        }
-    }
+    init { _state.update { it.copy(modelAvailable = useCase.isModelAvailable()) } }
 
     fun setSource(bitmap: Bitmap) {
         _state.update {
-            it.copy(
-                source = bitmap, result = null,
+            it.copy(source = bitmap, result = null,
                 statusText = "Siap", statusKind = StatusKind.IDLE,
                 progressPercent = 0, progressText = "Menunggu…",
-                info = "Sumber: ${bitmap.width}×${bitmap.height}"
-            )
+                info = "Sumber: ${bitmap.width}×${bitmap.height}")
         }
     }
 
-    fun setBackend(backend: Backend) {
-        _state.update { it.copy(backend = backend) }
-    }
+    fun setBackend(backend: Backend) { _state.update { it.copy(backend = backend) } }
 
     fun setThreadCount(count: Int) {
-        val max = _state.value.maxThreads
-        _state.update { it.copy(threadCount = count.coerceIn(1, max)) }
+        _state.update { it.copy(threadCount = count.coerceIn(1, it.maxThreads)) }
     }
 
     fun upscale() {
@@ -97,45 +91,26 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         if (s.processing) return
 
         _state.update {
-            it.copy(
-                processing = true, statusText = "Memproses…",
+            it.copy(processing = true, statusText = "Memproses…",
                 statusKind = StatusKind.RUNNING, progressPercent = 0,
-                progressText = "Memulai…", log = it.log + "─ Mulai proses ─"
-            )
+                progressText = "Memulai…", log = it.log + "─ Mulai proses ─")
         }
 
         viewModelScope.launch {
-            val result = useCase(
-                UpscaleRequest(src, s.backend, s.threadCount)
-            ) { event ->
+            val result = useCase(UpscaleRequest(src, s.backend, s.threadCount)) { event ->
                 when (event) {
-                    is ProgressEvent.Log -> _state.update { st ->
-                        st.copy(log = (st.log + event.message).takeLast(40))
-                    }
-                    is ProgressEvent.Warning -> _state.update { st ->
-                        st.copy(log = (st.log + "⚠ ${event.message}").takeLast(40))
-                    }
-                    is ProgressEvent.Error -> _state.update { st ->
-                        st.copy(log = (st.log + "✗ ${event.message}").takeLast(40))
-                    }
+                    is ProgressEvent.Log -> _state.update { st -> st.copy(log = (st.log + event.message).takeLast(40)) }
+                    is ProgressEvent.Warning -> _state.update { st -> st.copy(log = (st.log + "⚠ ${event.message}").takeLast(40)) }
+                    is ProgressEvent.Error -> _state.update { st -> st.copy(log = (st.log + "✗ ${event.message}").takeLast(40)) }
                     is ProgressEvent.Stage -> _state.update { st ->
-                        st.copy(
-                            statusText = event.phase,
-                            progressText = event.detail.ifEmpty { event.phase }
-                        )
+                        st.copy(statusText = event.phase, progressText = event.detail.ifEmpty { event.phase })
                     }
                     is ProgressEvent.TileProgress -> _state.update { st ->
-                        val pct = if (event.total > 0) {
-                            ((event.current.toFloat() / event.total) * 100f)
-                                .toInt()
-                                .coerceIn(0, 100)
-                        } else 0
-                        val currentSafe = event.current.coerceAtMost(event.total)
-                        st.copy(
-                            statusText = "Proses tile",
-                            progressPercent = pct,
-                            progressText = "Tile $currentSafe/${event.total} · ${event.msPerTile}ms/tile"
-                        )
+                        val pct = if (event.total > 0)
+                            ((event.current.toFloat() / event.total) * 100f).toInt().coerceIn(0, 100)
+                        else 0
+                        st.copy(statusText = "Proses tile", progressPercent = pct,
+                            progressText = "Tile ${event.current.coerceAtMost(event.total)}/${event.total} · ${event.msPerTile}ms/tile")
                     }
                     is ProgressEvent.Complete -> handleComplete(event.result)
                 }
@@ -143,12 +118,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
             if (result is AppResult.Failure) {
                 _state.update {
-                    it.copy(
-                        processing = false, statusText = "Gagal",
-                        statusKind = StatusKind.ERROR,
+                    it.copy(processing = false, statusText = "Gagal", statusKind = StatusKind.ERROR,
                         progressText = result.error.userMessage,
-                        log = (it.log + "ERROR: ${result.error.techMessage}").takeLast(40)
-                    )
+                        log = (it.log + "ERROR: ${result.error.techMessage}").takeLast(40))
                 }
             }
         }
@@ -156,13 +128,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     private fun handleComplete(r: UpscaleResult) {
         _state.update {
-            it.copy(
-                result = r.bitmap, processing = false,
+            it.copy(result = r.bitmap, processing = false,
                 statusText = if (r.usedFallback) "Selesai (fallback)" else "Selesai",
                 statusKind = StatusKind.DONE, progressPercent = 100,
                 progressText = "Selesai · ${r.bitmap.width}×${r.bitmap.height} · ${r.elapsedMs / 1000}s",
-                info = "Hasil: ${r.bitmap.width}×${r.bitmap.height}"
-            )
+                info = "Hasil: ${r.bitmap.width}×${r.bitmap.height}")
         }
     }
 }

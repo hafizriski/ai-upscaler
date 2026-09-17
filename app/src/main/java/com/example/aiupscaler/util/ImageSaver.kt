@@ -1,6 +1,5 @@
 package com.example.aiupscaler.util
 
-import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.Context
 import android.graphics.Bitmap
@@ -11,36 +10,13 @@ import android.provider.MediaStore
 import java.io.File
 import java.io.FileOutputStream
 
-/**
- * Simpan gambar ke galeri, kompatibel Android 9-17.
- *
- * Android 9 (API 28):    File API + MediaScanner
- * Android 10+ (API 29+): MediaStore dengan RELATIVE_PATH
- */
 object ImageSaver {
+    fun saveToGallery(context: Context, bitmap: Bitmap, displayName: String): Uri? = try {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
+            saveModern(context, bitmap, displayName)
+        else saveLegacy(context, bitmap, displayName)
+    } catch (_: Throwable) { null }
 
-    /**
-     * Return Uri kalau berhasil, null kalau gagal.
-     */
-    fun saveToGallery(
-        context: Context,
-        bitmap: Bitmap,
-        displayName: String = "upscaled_${System.currentTimeMillis()}.png"
-    ): Uri? {
-        return try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                saveModern(context, bitmap, displayName)
-            } else {
-                saveLegacy(context, bitmap, displayName)
-            }
-        } catch (e: Throwable) {
-            null
-        }
-    }
-
-    /**
-     * Android 10+ (API 29+) — pakai MediaStore dengan RELATIVE_PATH.
-     */
     private fun saveModern(context: Context, bitmap: Bitmap, name: String): Uri? {
         val values = ContentValues().apply {
             put(MediaStore.Images.Media.DISPLAY_NAME, name)
@@ -49,45 +25,25 @@ object ImageSaver {
                 Environment.DIRECTORY_PICTURES + "/AIUpscaler")
             put(MediaStore.Images.Media.IS_PENDING, 1)
         }
-
         val resolver = context.contentResolver
-        val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
-            ?: return null
-
-        resolver.openOutputStream(uri)?.use { os ->
-            bitmap.compress(Bitmap.CompressFormat.PNG, 100, os)
-        }
-
-        values.clear()
-        values.put(MediaStore.Images.Media.IS_PENDING, 0)
+        val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values) ?: return null
+        resolver.openOutputStream(uri)?.use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        values.clear(); values.put(MediaStore.Images.Media.IS_PENDING, 0)
         resolver.update(uri, values, null, null)
-
         return uri
     }
 
-    /**
-     * Android 9 (API 28) — tulis langsung ke Pictures/AIUpscaler, lalu scan.
-     */
     private fun saveLegacy(context: Context, bitmap: Bitmap, name: String): Uri? {
-        val picturesDir = Environment.getExternalStoragePublicDirectory(
-            Environment.DIRECTORY_PICTURES
-        )
+        val picturesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
         val appDir = File(picturesDir, "AIUpscaler")
         if (!appDir.exists()) appDir.mkdirs()
-
         val file = File(appDir, name)
-        FileOutputStream(file).use { os ->
-            bitmap.compress(Bitmap.CompressFormat.PNG, 100, os)
-        }
-
-        // Trigger media scanner supaya muncul di galeri
+        FileOutputStream(file).use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
         val values = ContentValues().apply {
             put(MediaStore.Images.Media.DATA, file.absolutePath)
             put(MediaStore.Images.Media.MIME_TYPE, "image/png")
             put(MediaStore.Images.Media.DISPLAY_NAME, name)
         }
-        return context.contentResolver.insert(
-            MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values
-        )
+        return context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
     }
 }

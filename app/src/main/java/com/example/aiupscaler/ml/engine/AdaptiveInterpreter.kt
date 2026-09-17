@@ -20,15 +20,11 @@ class AdaptiveInterpreter private constructor(
 
     val state: InterpreterState
 
-    @Volatile
-    private var workingStrategyIndex: Int = -1
+    @Volatile private var workingStrategyIndex: Int = -1
 
     init {
         state = inspectModel()
-        Telemetry.info(
-            "Interpreter",
-            "Model loaded: ${state.describe()} | threads=$threadCount"
-        )
+        Telemetry.info("Interpreter", "Model loaded: ${state.describe()} | threads=$threadCount")
     }
 
     private fun inspectModel(): InterpreterState {
@@ -41,18 +37,14 @@ class AdaptiveInterpreter private constructor(
         val outShape = outTensor.shape()
         val outType = outTensor.dataType()
 
-        val inIsNCHW: Boolean
-        val inH: Int
-        val inW: Int
+        val inIsNCHW: Boolean; val inH: Int; val inW: Int
         if (inShape.size == 4 && inShape[3] == 3) {
             inIsNCHW = false; inH = inShape[1]; inW = inShape[2]
         } else if (inShape.size == 4 && inShape[1] == 3) {
             inIsNCHW = true; inH = inShape[2]; inW = inShape[3]
         } else throw IllegalStateException("Input shape: ${inShape.toList()}")
 
-        val outIsNCHW: Boolean
-        val outH: Int
-        val outW: Int
+        val outIsNCHW: Boolean; val outH: Int; val outW: Int
         if (outShape.size == 4 && outShape[3] == 3) {
             outIsNCHW = false; outH = outShape[1]; outW = outShape[2]
         } else if (outShape.size == 4 && outShape[1] == 3) {
@@ -63,11 +55,8 @@ class AdaptiveInterpreter private constructor(
         val secondShape = if (hasSecond) interpreter.getInputTensor(1).shape().toList() else null
         val secondType = if (hasSecond) interpreter.getInputTensor(1).dataType() else null
 
-        return InterpreterState(
-            inH, inW, outH, outW, inIsNCHW, outIsNCHW,
-            inType, outType, numInputs, numOutputs,
-            secondShape, secondType, hasSecond
-        )
+        return InterpreterState(inH, inW, outH, outW, inIsNCHW, outIsNCHW,
+            inType, outType, numInputs, numOutputs, secondShape, secondType, hasSecond)
     }
 
     fun run(input: ByteBuffer): AppResult<Array<Array<FloatArray>>> =
@@ -97,9 +86,7 @@ class AdaptiveInterpreter private constructor(
                 interpreter.runForMultipleInputsOutputs(strategy.inputs, outputs)
                 workingStrategyIndex = strategies.indexOf(strategy)
                 return convertOutput(output)
-            } catch (e: Throwable) {
-                lastError = e
-            }
+            } catch (e: Throwable) { lastError = e }
         }
         throw lastError ?: IllegalStateException("Semua strategi gagal")
     }
@@ -110,62 +97,43 @@ class AdaptiveInterpreter private constructor(
                 @Suppress("UNCHECKED_CAST")
                 if (state.outputIsNCHW) {
                     val nchw = raw as Array<Array<Array<FloatArray>>>
-                    Array(state.outH) { y ->
-                        Array(state.outW) { x ->
-                            FloatArray(3) { c -> nchw[0][c][y][x] }
-                        }
-                    }
-                } else {
-                    (raw as Array<Array<Array<FloatArray>>>)[0]
-                }
+                    Array(state.outH) { y -> Array(state.outW) { x ->
+                        FloatArray(3) { c -> nchw[0][c][y][x] }
+                    } }
+                } else (raw as Array<Array<Array<FloatArray>>>)[0]
             }
             else -> {
                 @Suppress("UNCHECKED_CAST")
                 val bytes = raw as Array<Array<Array<ByteArray>>>
-                Array(state.outH) { y ->
-                    Array(state.outW) { x ->
-                        FloatArray(3) { c ->
-                            (bytes[0][y][x][c].toInt() and 0xFF) / 255f
-                        }
-                    }
-                }
+                Array(state.outH) { y -> Array(state.outW) { x ->
+                    FloatArray(3) { c -> (bytes[0][y][x][c].toInt() and 0xFF) / 255f }
+                } }
             }
         }
     }
 
-    override fun close() {
-        try { interpreter.close() } catch (_: Throwable) {}
-    }
+    override fun close() { try { interpreter.close() } catch (_: Throwable) {} }
 
     companion object {
-        fun load(
-            context: Context,
-            assetName: String,
-            backend: Backend,
-            threadCount: Int = 0
-        ): AppResult<AdaptiveInterpreter> = runCatchingResult {
-            val opts = DelegateFactory.build(context, backend, threadCount)
-            val buffer = loadModelBuffer(context, assetName)
-            val threads = if (threadCount > 0) threadCount
-                          else GpuDetector.recommendedCpuThreads()
-            AdaptiveInterpreter(Interpreter(buffer, opts), threads)
-        }.let { result ->
-            when (result) {
-                is AppResult.Success -> result
-                is AppResult.Failure -> AppResult.Failure(
-                    AppError.ModelLoadFailed(result.error.techMessage, result.error.cause)
-                )
+        fun load(context: Context, assetName: String, backend: Backend, threadCount: Int = 0): AppResult<AdaptiveInterpreter> =
+            runCatchingResult {
+                val opts = DelegateFactory.build(context, backend, threadCount)
+                val buffer = loadModelBuffer(context, assetName)
+                val threads = if (threadCount > 0) threadCount else GpuDetector.recommendedCpuThreads()
+                AdaptiveInterpreter(Interpreter(buffer, opts), threads)
+            }.let { result ->
+                when (result) {
+                    is AppResult.Success -> result
+                    is AppResult.Failure -> AppResult.Failure(
+                        AppError.ModelLoadFailed(result.error.techMessage, result.error.cause))
+                }
             }
-        }
 
         private fun loadModelBuffer(context: Context, name: String): ByteBuffer {
             context.assets.openFd(name).use { fd ->
                 FileInputStream(fd.fileDescriptor).use { fis ->
-                    return fis.channel.map(
-                        FileChannel.MapMode.READ_ONLY,
-                        fd.startOffset,
-                        fd.declaredLength
-                    ).order(ByteOrder.nativeOrder())
+                    return fis.channel.map(FileChannel.MapMode.READ_ONLY, fd.startOffset, fd.declaredLength)
+                        .order(ByteOrder.nativeOrder())
                 }
             }
         }

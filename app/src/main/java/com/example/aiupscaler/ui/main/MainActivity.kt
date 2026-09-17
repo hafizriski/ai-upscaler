@@ -13,11 +13,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.updateLayoutParams
-import androidx.core.view.updatePadding
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -39,65 +34,28 @@ class MainActivity : AppCompatActivity() {
     private val vm: MainViewModel by viewModels()
     private val ui = Handler(Looper.getMainLooper())
 
-    private val pick = registerForActivityResult(
-        ActivityResultContracts.GetContent()
-    ) { uri -> uri?.let { loadUri(it) } }
+    private val pick = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        uri?.let { loadUri(it) }
+    }
 
     private val requestPermission = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { result ->
-        if (result.values.all { it }) toast("Izin diberikan")
-        else toast("Izin ditolak")
+        if (result.values.all { it }) toast("Izin diberikan") else toast("Izin ditolak")
     }
 
     private val systemTicker = object : Runnable {
-        override fun run() {
-            refreshSystem()
-            ui.postDelayed(this, 1500)
-        }
+        override fun run() { refreshSystem(); ui.postDelayed(this, 1500) }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        WindowCompat.setDecorFitsSystemWindows(window, false)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
-        applyWindowInsets()
         setupListeners()
         observeState()
         ensurePermissions()
-
         ui.post(systemTicker)
-    }
-
-    private fun applyWindowInsets() {
-        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, insets ->
-            val sysBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            val cutout = insets.getInsets(WindowInsetsCompat.Type.displayCutout())
-
-            val density = resources.displayMetrics.density
-            val basePadBottom = (12 * density).toInt()
-            val basePadLR = (12 * density).toInt()
-
-            // FIX: padding TOP toolbar = status bar height + 8dp
-            val extraTop = (8 * density).toInt()
-            binding.toolbar.updatePadding(
-                top = sysBars.top + extraTop,
-                bottom = extraTop,
-                left = cutout.left,
-                right = cutout.right
-            )
-
-            // Bottom bar: padding bottom = nav bar height
-            binding.bottomBar.updatePadding(
-                bottom = basePadBottom + sysBars.bottom,
-                left = basePadLR + cutout.left,
-                right = basePadLR + cutout.right
-            )
-
-            insets
-        }
     }
 
     private fun ensurePermissions() {
@@ -106,22 +64,16 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        ui.removeCallbacks(systemTicker)
-    }
+    override fun onDestroy() { super.onDestroy(); ui.removeCallbacks(systemTicker) }
 
     private fun setupListeners() {
         binding.btnPick.setOnClickListener {
             if (!PermissionHelper.hasPermission(this)) {
                 requestPermission.launch(PermissionHelper.getRequiredPermissions())
-            } else {
-                pick.launch("image/*")
-            }
+            } else pick.launch("image/*")
         }
         binding.btnUpscale.setOnClickListener {
-            if (vm.state.value.source == null) toast("Pilih gambar dulu")
-            else vm.upscale()
+            if (vm.state.value.source == null) toast("Pilih gambar dulu") else vm.upscale()
         }
         binding.btnSave.setOnClickListener { saveResult() }
         binding.btnShare.setOnClickListener { shareResult() }
@@ -131,12 +83,11 @@ class MainActivity : AppCompatActivity() {
         }
         binding.toggleBackend.check(binding.btnCpu.id)
 
-        // CPU threads slider
-        val maxThreads = Runtime.getRuntime().availableProcessors().coerceAtLeast(1)
-        binding.sliderThreads.valueTo = maxThreads.toFloat()
-        binding.sliderThreads.value = vm.state.value.threadCount.toFloat().coerceAtLeast(1f)
-        binding.tvThreadCount.text = vm.state.value.threadCount.toString()
-
+        val s = vm.state.value
+        binding.sliderThreads.valueTo = s.maxThreads.toFloat().coerceAtLeast(1f)
+        binding.sliderThreads.valueFrom = 1f
+        binding.sliderThreads.value = s.threadCount.toFloat().coerceIn(1f, s.maxThreads.toFloat())
+        binding.tvThreadCount.text = s.threadCount.toString()
         binding.sliderThreads.addOnChangeListener { _, value, fromUser ->
             if (fromUser) {
                 val threads = value.toInt().coerceAtLeast(1)
@@ -177,9 +128,8 @@ class MainActivity : AppCompatActivity() {
                         binding.linearProgress.visibility = View.VISIBLE
                         binding.linearProgress.isIndeterminate = false
                         binding.linearProgress.setProgressCompat(s.progressPercent, true)
-                    } else {
-                        binding.linearProgress.visibility = View.INVISIBLE
-                    }
+                    } else binding.linearProgress.visibility = View.INVISIBLE
+
                     binding.btnUpscale.isEnabled = s.source != null && !s.processing
                     binding.btnPick.isEnabled = !s.processing
                     binding.btnSave.isEnabled = s.result != null && !s.processing
@@ -190,10 +140,12 @@ class MainActivity : AppCompatActivity() {
                     binding.tvLog.text = s.log.takeLast(14).joinToString("\n")
                     binding.tvThreadCount.text = s.threadCount.toString()
 
-                    // GPU info display
                     s.gpuInfo?.let { gpu ->
-                        binding.tvGpu.text = gpu.adrenoSeries.takeIf { it != "unknown" }
-                            ?.let { "Adreno $it" } ?: "GPU"
+                        binding.tvGpu.text = if (gpu.isAdreno && gpu.adrenoSeries != "unknown")
+                            "Adreno ${gpu.adrenoSeries}" else "GPU"
+                        binding.tvVulkan.text = if (gpu.supportsVulkan)
+                            "Vulkan: ✅ API ${gpu.vulkanApiLevel}" + if (gpu.supportsFp16) " · FP16" else ""
+                        else "Vulkan: ❌ Tidak didukung"
                     }
                 }
             }
@@ -225,15 +177,12 @@ class MainActivity : AppCompatActivity() {
     private fun saveResult() {
         val bmp = vm.state.value.result ?: return
         lifecycleScope.launch(Dispatchers.IO) {
-            val uri = ImageSaver.saveToGallery(
-                context = this@MainActivity,
-                bitmap = bmp,
-                displayName = "upscaled_${System.currentTimeMillis()}.png"
-            )
+            val uri = ImageSaver.saveToGallery(this@MainActivity, bmp,
+                "upscaled_${System.currentTimeMillis()}.png")
             withContext(Dispatchers.Main) {
-                if (uri != null) {
-                    Snackbar.make(binding.root, getString(R.string.saved_success), Snackbar.LENGTH_LONG).show()
-                } else toast("Gagal menyimpan")
+                if (uri != null) Snackbar.make(binding.root,
+                    getString(R.string.saved_success), Snackbar.LENGTH_LONG).show()
+                else toast("Gagal menyimpan")
             }
         }
     }
@@ -245,8 +194,7 @@ class MainActivity : AppCompatActivity() {
                 val path = File(cacheDir, "share_${System.currentTimeMillis()}.png")
                 path.outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
                 val uri = FileProvider.getUriForFile(
-                    this@MainActivity, "$packageName.fileprovider", path
-                )
+                    this@MainActivity, "$packageName.fileprovider", path)
                 withContext(Dispatchers.Main) {
                     val intent = Intent(Intent.ACTION_SEND).apply {
                         type = "image/png"

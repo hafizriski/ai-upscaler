@@ -5,18 +5,15 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
 object StrategyBuilder {
-
     data class Strategy(val inputs: Array<Any>)
 
     fun build(imageInput: ByteBuffer, state: InterpreterState): List<Strategy> {
         if (!state.hasSecondInput) return listOf(Strategy(arrayOf(imageInput)))
-
         val type = state.secondInputType ?: DataType.FLOAT32
         val count = state.secondInputShape?.fold(1) { a, b -> a * b } ?: 0
         if (count == 0) return listOf(Strategy(arrayOf(imageInput)))
 
         val s = mutableListOf<Strategy>()
-
         if (count == 2) {
             s += Strategy(arrayOf(imageInput, buf(type, count) { b ->
                 putVal(b, type, state.inH.toLong()); putVal(b, type, state.inW.toLong())

@@ -7,7 +7,6 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
 object InputBuilder {
-
     fun build(bmp: Bitmap, state: InterpreterState): ByteBuffer {
         val size = state.inH
         val px = IntArray(size * size)

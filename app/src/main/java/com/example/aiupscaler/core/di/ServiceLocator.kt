@@ -6,14 +6,11 @@ import com.example.aiupscaler.domain.repository.UpscaleRepository
 import com.example.aiupscaler.domain.usecase.UpscaleImageUseCase
 
 object ServiceLocator {
-
     @Volatile private var appContext: Context? = null
     @Volatile private var repo: UpscaleRepository? = null
     @Volatile private var useCase: UpscaleImageUseCase? = null
 
-    fun init(context: Context) {
-        appContext = context.applicationContext
-    }
+    fun init(context: Context) { appContext = context.applicationContext }
 
     fun provideRepository(): UpscaleRepository {
         repo?.let { return it }
