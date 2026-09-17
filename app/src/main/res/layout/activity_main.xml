@@ -38,17 +38,7 @@
                 android:id="@+id/imagePreview"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:contentDescription="@string/app_name"
                 android:scaleType="fitCenter"/>
-
-            <ProgressBar
-                android:id="@+id/progress"
-                style="?android:attr/progressBarStyleHorizontal"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_gravity="bottom"
-                android:indeterminate="true"
-                android:visibility="invisible"/>
 
             <com.google.android.material.progressindicator.LinearProgressIndicator
                 android:id="@+id/linearProgress"
@@ -119,9 +109,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginEnd="6dp"
-            android:text="@string/pick_image"
-            app:icon="@android:drawable/ic_menu_gallery"
-            app:iconGravity="textStart"/>
+            android:text="@string/pick_image"/>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnUpscale"
@@ -130,8 +118,7 @@
             android:layout_weight="1"
             android:layout_marginEnd="6dp"
             android:enabled="false"
-            android:text="@string/upscale"
-            app:icon="@android:drawable/ic_menu_edit"/>
+            android:text="@string/upscale"/>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnSave"
@@ -140,8 +127,6 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:enabled="false"
-            android:text="@string/save"
-            app:icon="@android:drawable/ic_menu_save"/>
+            android:text="@string/save"/>
     </LinearLayout>
-
 </androidx.constraintlayout.widget.ConstraintLayout>

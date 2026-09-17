@@ -10,21 +10,18 @@ import java.nio.channels.FileChannel
 class UpscalerInterpreter(
     context: Context,
     modelAsset: String,
-    backend: Backend = Backend.GPU
+    backend: Backend = Backend.CPU
 ) : AutoCloseable {
 
     private val interpreter: Interpreter
-    private val closables: List<AutoCloseable>
     private val inH: Int
     private val inW: Int
     private val outH: Int
     private val outW: Int
 
     init {
-        val (opts, c) = DelegateFactory.build(context, backend)
-        closables = c
+        val (opts, _) = DelegateFactory.build(context, backend)
         interpreter = Interpreter(loadModel(context, modelAsset), opts)
-
         val inShape = interpreter.getInputTensor(0).shape()
         val outShape = interpreter.getOutputTensor(0).shape()
         inH = inShape[1]; inW = inShape[2]
@@ -40,10 +37,7 @@ class UpscalerInterpreter(
         return out
     }
 
-    override fun close() {
-        interpreter.close()
-        closables.forEach { runCatching { it.close() } }
-    }
+    override fun close() = interpreter.close()
 
     private fun loadModel(context: Context, name: String): ByteBuffer {
         context.assets.openFd(name).use { fd ->

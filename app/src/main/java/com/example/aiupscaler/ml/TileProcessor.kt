@@ -7,7 +7,6 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
 class TileProcessor(private val interp: UpscalerInterpreter) {
-
     private val tile = interp.inputSize
     private val scale = interp.scale
     private val overlap = 8
@@ -28,13 +27,10 @@ class TileProcessor(private val interp: UpscalerInterpreter) {
                 val cw = minOf(tile, w - x)
                 val ch = minOf(tile, h - y)
                 val padded = extractPadded(srcArgb, x, y, cw, ch, tile)
-
-                val inBuf = toInputBuffer(padded)
-                val out = interp.run(inBuf)
+                val out = interp.run(toInputBuffer(padded))
                 val tileBmp = toBitmap(out[0], tile * scale)
                 val crop = Bitmap.createBitmap(tileBmp, 0, 0, cw * scale, ch * scale)
                 canvas.drawBitmap(crop, (x * scale).toFloat(), (y * scale).toFloat(), paint)
-
                 x += stride
                 if (x + tile > w) x = maxOf(0, w - tile)
                 if (x >= w) break
@@ -48,15 +44,12 @@ class TileProcessor(private val interp: UpscalerInterpreter) {
 
     private fun extractPadded(src: Bitmap, x: Int, y: Int, cw: Int, ch: Int, size: Int): Bitmap {
         val bmp = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
-        val c = Canvas(bmp)
-        val patch = Bitmap.createBitmap(src, x, y, cw, ch)
-        c.drawBitmap(patch, 0f, 0f, null)
+        Canvas(bmp).drawBitmap(Bitmap.createBitmap(src, x, y, cw, ch), 0f, 0f, null)
         return bmp
     }
 
     private fun toInputBuffer(bmp: Bitmap): ByteBuffer {
-        val buf = ByteBuffer.allocateDirect(tile * tile * 3 * 4)
-            .order(ByteOrder.nativeOrder())
+        val buf = ByteBuffer.allocateDirect(tile * tile * 3 * 4).order(ByteOrder.nativeOrder())
         val px = IntArray(tile * tile)
         bmp.getPixels(px, 0, tile, 0, 0, tile, tile)
         for (p in px) {
