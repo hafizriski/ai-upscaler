@@ -40,7 +40,7 @@ data class MainUiState(
     val statusKind: StatusKind = StatusKind.IDLE,
     val progressPercent: Int = 0,
     val progressText: String = "Menunggu…",
-    val info: String = "Pilih gambar untuk memulai",
+    val info: String = "Tap Add untuk pilih gambar",
     val log: List<String> = emptyList(),
     val processing: Boolean = false,
     val downloading: Boolean = false,
@@ -76,7 +76,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             log = listOf(
                 "GPU: ${gpuInfo.renderer}",
                 "Adreno: ${gpuInfo.adrenoSeries}",
-                "Vulkan: ${if (gpuInfo.supportsVulkan) "OK API ${gpuInfo.vulkanApiLevel}" else "Tidak didukung"}",
+                "Vulkan: ${if (gpuInfo.supportsVulkan) "OK API ${gpuInfo.vulkanApiLevel}" else "tidak didukung"}",
                 "CPU threads: $recommendedThreads"
             )
         )
@@ -126,7 +126,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             it.copy(
                 selectedModelId = modelId,
                 selectedReady = ready,
-                log = (it.log + "Model: ${spec.displayName} ${if (ready) "[OK]" else "[belum di-download]"}").takeLast(40)
+                log = (it.log + "Model: ${spec.displayName} ${if (ready) "[OK]" else "[belum]"}")
+                    .takeLast(40)
             )
         }
     }
@@ -148,7 +149,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    /** Auto-download model kalau belum ada, lalu upscale */
     fun ensureModelAndUpscale() {
         val s = _state.value
         val spec = s.selectedModel ?: return
@@ -173,7 +173,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 statusKind = StatusKind.DOWNLOADING,
                 progressPercent = 0,
                 progressText = "0 MB / ${spec.approxSizeMb} MB",
-                log = (it.log + "v Download ${spec.displayName}").takeLast(40)
+                log = (it.log + "Download ${spec.displayName}").takeLast(40)
             )
         }
 
@@ -238,7 +238,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 statusKind = StatusKind.RUNNING,
                 progressPercent = 0,
                 progressText = "Memulai…",
-                log = it.log + "-- Mulai proses --"
+                log = it.log + "-- Mulai --"
             )
         }
 
@@ -263,7 +263,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         }
                         is ProgressEvent.TileProgress -> _state.update { st ->
                             val pct = if (event.total > 0)
-                                ((event.current.toFloat() / event.total) * 100f).toInt().coerceIn(0, 100)
+                                ((event.current.toFloat() / event.total) * 100f).toInt()
+                                    .coerceIn(0, 100)
                             else 0
                             st.copy(
                                 statusText = "Proses tile",

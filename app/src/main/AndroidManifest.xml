@@ -18,15 +18,9 @@
     <uses-permission
         android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED"
         tools:targetApi="upside_down_cake"/>
-
     <uses-permission
         android:name="android.permission.POST_NOTIFICATIONS"
         tools:targetApi="tiramisu"/>
-    <uses-permission android:name="android.permission.WAKE_LOCK"/>
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
-    <uses-permission
-        android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"
-        tools:targetApi="upside_down_cake"/>
 
     <application
         android:allowBackup="true"

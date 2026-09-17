@@ -1,5 +1,6 @@
 package com.arthexdev.exups.ui.main
 
+import android.animation.ObjectAnimator
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -7,7 +8,10 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.view.HapticFeedbackConstants
 import android.view.View
+import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.animation.OvershootInterpolator
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
@@ -49,50 +53,95 @@ class MainActivity : AppCompatActivity() {
     }
 
     private val systemTicker = object : Runnable {
-        override fun run() { refreshSystem(); ui.postDelayed(this, 1500) }
+        override fun run() {
+            refreshSystem()
+            ui.postDelayed(this, 1500)
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
         setupListeners()
+        setupAnimations()
         observeState()
         ensurePermissions()
         ui.post(systemTicker)
     }
 
+    private fun setupAnimations() {
+        // FAB entrance animation
+        binding.fabAdd.scaleX = 0f
+        binding.fabAdd.scaleY = 0f
+        binding.fabAdd.animate()
+            .scaleX(1f).scaleY(1f)
+            .setDuration(400)
+            .setInterpolator(OvershootInterpolator(1.2f))
+            .start()
+
+        // Bottom nav slide up
+        binding.bottomNav.translationY = 100f
+        binding.bottomNav.alpha = 0f
+        binding.bottomNav.animate()
+            .translationY(0f).alpha(1f)
+            .setDuration(400)
+            .setInterpolator(AccelerateDecelerateInterpolator())
+            .start()
+
+        // Toolbar fade in
+        binding.toolbar.alpha = 0f
+        binding.toolbar.animate().alpha(1f).setDuration(300).start()
+    }
+
     private fun ensurePermissions() {
-        if (!PermissionHelper.hasPermission(this)) {
+        if (!PermissionHelper.hasStoragePermission(this)) {
             requestPermission.launch(PermissionHelper.getRequiredPermissions())
         }
     }
 
-    override fun onDestroy() { super.onDestroy(); ui.removeCallbacks(systemTicker) }
+    override fun onDestroy() {
+        super.onDestroy()
+        ui.removeCallbacks(systemTicker)
+    }
 
     private fun setupListeners() {
-        binding.btnPick.setOnClickListener {
-            if (!PermissionHelper.hasPermission(this)) {
+        // FAB
+        binding.fabAdd.setOnClickListener {
+            it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+            it.animate().scaleX(0.9f).scaleY(0.9f).setDuration(100).withEndAction {
+                it.animate().scaleX(1f).scaleY(1f).setDuration(100).start()
+            }.start()
+
+            if (!PermissionHelper.hasStoragePermission(this)) {
                 requestPermission.launch(PermissionHelper.getRequiredPermissions())
-            } else pick.launch("image/*")
+            } else {
+                pick.launch("image/*")
+            }
         }
-        // Gunakan ensureModelAndUpscale — auto download kalau model belum ada
-        binding.btnUpscale.setOnClickListener {
-            if (vm.state.value.source == null) toast("Pilih gambar dulu")
-            else vm.ensureModelAndUpscale()
+
+        // Bottom nav (placeholder untuk sekarang)
+        binding.navHome.setOnClickListener {
+            it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+            toast("Home")
         }
-        binding.btnSave.setOnClickListener { saveResult() }
-        binding.btnShare.setOnClickListener { shareResult() }
+        binding.navGallery.setOnClickListener {
+            it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+            toast("Gallery — coming soon")
+        }
+        binding.navSettings.setOnClickListener {
+            it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+            toast("Settings — coming soon")
+        }
+
+        // Cancel
         binding.btnCancel.setOnClickListener {
             vm.cancel()
             toast("Dibatalkan")
         }
 
-        binding.toggleBackend.addOnButtonCheckedListener { _, id, checked ->
-            if (checked) vm.setBackend(if (id == binding.btnGpu.id) Backend.GPU else Backend.CPU)
-        }
-        binding.toggleBackend.check(binding.btnCpu.id)
-
+        // Thread slider
         val s = vm.state.value
         binding.sliderThreads.valueTo = s.maxThreads.toFloat().coerceAtLeast(1f)
         binding.sliderThreads.valueFrom = 1f
@@ -106,9 +155,18 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        // Log toggle
         binding.logHeader.setOnClickListener {
             val visible = binding.tvLog.visibility == View.VISIBLE
-            binding.tvLog.visibility = if (visible) View.GONE else View.VISIBLE
+            if (visible) {
+                binding.tvLog.animate().alpha(0f).setDuration(150).withEndAction {
+                    binding.tvLog.visibility = View.GONE
+                }.start()
+            } else {
+                binding.tvLog.visibility = View.VISIBLE
+                binding.tvLog.alpha = 0f
+                binding.tvLog.animate().alpha(1f).setDuration(150).start()
+            }
             binding.logChevron.text = if (visible) "▸" else "▾"
         }
     }
@@ -119,12 +177,15 @@ class MainActivity : AppCompatActivity() {
         models.forEach { spec ->
             val ready = ModelRegistry.isReady(this, spec)
             val chip = Chip(this).apply {
-                text = "${spec.displayName} ${if (ready) "✅" else "⬇"}"
+                text = "${spec.displayName} ${if (ready) "" else "⬇"}"
                 isCheckable = true
                 isChecked = spec.id == selectedId
                 isChipIconVisible = false
-                textSize = 11f
-                setOnClickListener { vm.setModel(spec.id) }
+                textSize = 12f
+                setOnClickListener {
+                    it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                    vm.setModel(spec.id)
+                }
             }
             binding.chipGroupModels.addView(chip)
             chipModelMap[spec.id] = chip
@@ -141,7 +202,7 @@ class MainActivity : AppCompatActivity() {
             return
         }
         val ready = ModelRegistry.isReady(this, spec)
-        binding.tvModelName.text = spec.displayName + if (ready) " ✅" else " (perlu download)"
+        binding.tvModelName.text = spec.displayName + if (ready) "" else " · perlu download"
         binding.tvModelDesc.text = spec.description
         binding.chipScale.text = "×${spec.scale}"
         binding.chipSize.text = "${spec.approxSizeMb} MB"
@@ -152,8 +213,15 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 vm.state.collect { s ->
+                    // Preview
                     binding.imagePreview.setImageBitmap(s.result ?: s.source)
+                    binding.previewPlaceholder.visibility =
+                        if (s.result == null && s.source == null) View.VISIBLE else View.GONE
+
+                    // Info
                     binding.tvInfo.text = s.info
+
+                    // Status
                     binding.tvStatus.text = s.statusText
                     binding.tvPercent.text = if (s.progressPercent > 0) "${s.progressPercent}%" else ""
                     binding.tvProgress.text = s.progressText
@@ -161,51 +229,68 @@ class MainActivity : AppCompatActivity() {
                         when (s.statusKind) {
                             StatusKind.IDLE -> R.drawable.dot_idle
                             StatusKind.RUNNING -> R.drawable.dot_running
-                            StatusKind.DOWNLOADING -> R.drawable.dot_running
+                            StatusKind.DOWNLOADING -> R.drawable.dot_downloading
                             StatusKind.DONE -> R.drawable.dot_done
                             StatusKind.ERROR -> R.drawable.dot_error
                             StatusKind.CANCELLED -> R.drawable.dot_idle
                         }
                     )
 
-                    if (s.processing || s.downloading) {
+                    // Progress
+                    val busy = s.processing || s.downloading
+                    if (busy) {
                         binding.linearProgress.visibility = View.VISIBLE
                         binding.linearProgress.isIndeterminate = s.progressPercent == 0
                         binding.linearProgress.setProgressCompat(s.progressPercent, true)
-                    } else if (s.progressPercent > 0) {
+
+                        binding.progressOverlay.visibility = View.VISIBLE
+                        binding.progressScrim.visibility = View.VISIBLE
+                        binding.circularProgress.isIndeterminate = s.progressPercent == 0
+                        if (s.progressPercent > 0) {
+                            binding.circularProgress.setProgressCompat(s.progressPercent, true)
+                        }
+                    } else if (s.progressPercent > 0 && s.progressPercent < 100) {
                         binding.linearProgress.visibility = View.VISIBLE
                         binding.linearProgress.isIndeterminate = false
                         binding.linearProgress.setProgressCompat(s.progressPercent, true)
+                        binding.progressOverlay.visibility = View.GONE
+                        binding.progressScrim.visibility = View.GONE
                     } else {
                         binding.linearProgress.visibility = View.INVISIBLE
+                        binding.progressOverlay.visibility = View.GONE
+                        binding.progressScrim.visibility = View.GONE
                     }
 
+                    // Cancel button
                     binding.btnCancel.visibility = if (s.canCancel) View.VISIBLE else View.GONE
 
-                    binding.btnUpscale.isEnabled = s.source != null && !s.processing && !s.downloading
-                    binding.btnPick.isEnabled = !s.processing && !s.downloading
-                    binding.btnSave.isEnabled = s.result != null && !s.processing
-                    binding.btnShare.isEnabled = s.result != null && !s.processing
-                    binding.toggleBackend.isEnabled = !s.processing && !s.downloading
-                    binding.sliderThreads.isEnabled = !s.processing && !s.downloading
-                    binding.chipBackend.text = s.backend.label
-                    binding.tvLog.text = s.log.takeLast(14).joinToString("\n")
-                    binding.tvThreadCount.text = s.threadCount.toString()
+                    // FAB enable state
+                    binding.fabAdd.isEnabled = !busy
 
+                    // Threads
+                    binding.tvThreadCount.text = s.threadCount.toString()
+                    binding.sliderThreads.isEnabled = !busy
+
+                    // Log
+                    binding.tvLog.text = s.log.takeLast(14).joinToString("\n")
+
+                    // Model chips
                     if (binding.chipGroupModels.childCount != s.allModels.size) {
                         buildModelChips(s.allModels, s.selectedModelId)
                     } else {
                         chipModelMap[s.selectedModelId]?.isChecked = true
                     }
                     updateModelDetail(s.selectedModel)
-                    binding.chipGroupModels.isEnabled = !s.processing && !s.downloading
+                    binding.chipGroupModels.isEnabled = !busy
 
+                    // GPU
                     s.gpuInfo?.let { gpu ->
                         binding.tvGpu.text = if (gpu.isAdreno && gpu.adrenoSeries != "unknown")
                             "Adreno ${gpu.adrenoSeries}" else "GPU"
                         binding.tvVulkan.text = if (gpu.supportsVulkan)
-                            "Vulkan: ✅ API ${gpu.vulkanApiLevel}" + if (gpu.supportsFp16) " · FP16" else ""
-                        else "Vulkan: ❌ Tidak didukung"
+                            "Vulkan: API ${gpu.vulkanApiLevel}" +
+                                if (gpu.supportsFp16) " · FP16" else ""
+                        else "Vulkan: tidak didukung"
                     }
                 }
             }
@@ -227,44 +312,14 @@ class MainActivity : AppCompatActivity() {
                 val bmp = BitmapFactory.decodeStream(s)
                 s.close()
                 if (bmp == null) withContext(Dispatchers.Main) { toast("Gagal memuat") }
-                else withContext(Dispatchers.Main) { vm.setSource(bmp) }
-            } catch (e: Throwable) {
-                withContext(Dispatchers.Main) { toast("Error: ${e.message}") }
-            }
-        }
-    }
-
-    private fun saveResult() {
-        val bmp = vm.state.value.result ?: return
-        lifecycleScope.launch(Dispatchers.IO) {
-            val uri = ImageSaver.saveToGallery(this@MainActivity, bmp,
-                "upscaled_${System.currentTimeMillis()}.png")
-            withContext(Dispatchers.Main) {
-                if (uri != null) Snackbar.make(binding.root,
-                    getString(R.string.saved_success), Snackbar.LENGTH_LONG).show()
-                else toast("Gagal menyimpan")
-            }
-        }
-    }
-
-    private fun shareResult() {
-        val bmp = vm.state.value.result ?: return
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                val path = File(cacheDir, "share_${System.currentTimeMillis()}.png")
-                path.outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
-                val uri = FileProvider.getUriForFile(
-                    this@MainActivity, "$packageName.fileprovider", path)
-                withContext(Dispatchers.Main) {
-                    val intent = Intent(Intent.ACTION_SEND).apply {
-                        type = "image/png"
-                        putExtra(Intent.EXTRA_STREAM, uri)
-                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                    }
-                    startActivity(Intent.createChooser(intent, "Bagikan"))
+                else withContext(Dispatchers.Main) {
+                    vm.setSource(bmp)
+                    // Animate preview
+                    binding.imagePreview.alpha = 0f
+                    binding.imagePreview.animate().alpha(1f).setDuration(300).start()
                 }
             } catch (e: Throwable) {
-                withContext(Dispatchers.Main) { toast("Gagal bagikan: ${e.message}") }
+                withContext(Dispatchers.Main) { toast("Error: ${e.message}") }
             }
         }
     }

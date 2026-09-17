@@ -1,18 +1,36 @@
 <resources>
     <string name="app_name">Ex Upscaler</string>
+
+    <!-- Nav -->
+    <string name="nav_home">Home</string>
+    <string name="nav_gallery">Gallery</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- Actions -->
+    <string name="action_add">Add</string>
     <string name="action_pick">Pilih</string>
     <string name="action_upscale">Upscale</string>
     <string name="action_save">Simpan</string>
     <string name="action_share">Bagikan</string>
     <string name="action_cancel">Batalkan</string>
+
+    <!-- Status -->
     <string name="status_idle">Siap</string>
+
+    <!-- Labels -->
+    <string name="label_model">AI Model</string>
     <string name="label_cpu">CPU</string>
     <string name="label_ram">RAM</string>
     <string name="label_gpu">GPU</string>
+    <string name="label_threads">Threads</string>
     <string name="label_detail">Detail proses</string>
-    <string name="hint_pick_image">Pilih gambar untuk memulai</string>
+
+    <!-- Hints -->
+    <string name="hint_pick_image">Tap Add untuk pilih gambar</string>
+    <string name="hint_no_result">Hasil akan muncul di sini</string>
+
+    <!-- Messages -->
     <string name="saved_success">Tersimpan di Pictures/ExUpscaler</string>
     <string name="cd_image_preview">Pratinjau gambar</string>
     <string name="developer_info">Developed by arthexdev</string>
-    <string name="app_version">v1.0.0</string>
 </resources>
