@@ -16,6 +16,7 @@ import androidx.core.content.FileProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updateLayoutParams
 import androidx.core.view.updatePadding
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -75,19 +76,24 @@ class MainActivity : AppCompatActivity() {
             val sysBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             val cutout = insets.getInsets(WindowInsetsCompat.Type.displayCutout())
 
-            // Toolbar: tambah padding top = status bar height
+            val density = resources.displayMetrics.density
+            val basePadBottom = (12 * density).toInt()
+            val basePadLR = (12 * density).toInt()
+
+            // FIX: padding TOP toolbar = status bar height + 8dp
+            val extraTop = (8 * density).toInt()
             binding.toolbar.updatePadding(
-                top = sysBars.top,
+                top = sysBars.top + extraTop,
+                bottom = extraTop,
                 left = cutout.left,
                 right = cutout.right
             )
 
-            // BottomBar: tambah padding bottom = nav bar height
-            val basePad = (12 * resources.displayMetrics.density).toInt()
+            // Bottom bar: padding bottom = nav bar height
             binding.bottomBar.updatePadding(
-                bottom = basePad + sysBars.bottom,
-                left = basePad + cutout.left,
-                right = basePad + cutout.right
+                bottom = basePadBottom + sysBars.bottom,
+                left = basePadLR + cutout.left,
+                right = basePadLR + cutout.right
             )
 
             insets
@@ -119,10 +125,26 @@ class MainActivity : AppCompatActivity() {
         }
         binding.btnSave.setOnClickListener { saveResult() }
         binding.btnShare.setOnClickListener { shareResult() }
+
         binding.toggleBackend.addOnButtonCheckedListener { _, id, checked ->
             if (checked) vm.setBackend(if (id == binding.btnGpu.id) Backend.GPU else Backend.CPU)
         }
         binding.toggleBackend.check(binding.btnCpu.id)
+
+        // CPU threads slider
+        val maxThreads = Runtime.getRuntime().availableProcessors().coerceAtLeast(1)
+        binding.sliderThreads.valueTo = maxThreads.toFloat()
+        binding.sliderThreads.value = vm.state.value.threadCount.toFloat().coerceAtLeast(1f)
+        binding.tvThreadCount.text = vm.state.value.threadCount.toString()
+
+        binding.sliderThreads.addOnChangeListener { _, value, fromUser ->
+            if (fromUser) {
+                val threads = value.toInt().coerceAtLeast(1)
+                vm.setThreadCount(threads)
+                binding.tvThreadCount.text = threads.toString()
+            }
+        }
+
         binding.logHeader.setOnClickListener {
             val visible = binding.tvLog.visibility == View.VISIBLE
             binding.tvLog.visibility = if (visible) View.GONE else View.VISIBLE
@@ -163,8 +185,16 @@ class MainActivity : AppCompatActivity() {
                     binding.btnSave.isEnabled = s.result != null && !s.processing
                     binding.btnShare.isEnabled = s.result != null && !s.processing
                     binding.toggleBackend.isEnabled = !s.processing
+                    binding.sliderThreads.isEnabled = !s.processing
                     binding.chipBackend.text = s.backend.label
-                    binding.tvLog.text = s.log.takeLast(12).joinToString("\n")
+                    binding.tvLog.text = s.log.takeLast(14).joinToString("\n")
+                    binding.tvThreadCount.text = s.threadCount.toString()
+
+                    // GPU info display
+                    s.gpuInfo?.let { gpu ->
+                        binding.tvGpu.text = gpu.adrenoSeries.takeIf { it != "unknown" }
+                            ?.let { "Adreno $it" } ?: "GPU"
+                    }
                 }
             }
         }
@@ -175,7 +205,6 @@ class MainActivity : AppCompatActivity() {
             val stats = SystemMonitor.snapshot(this, vm.state.value.backend.label)
             binding.tvCpu.text = "${stats.cpuCores}c · ${stats.cpuFreqMhz}MHz"
             binding.tvRam.text = "${stats.ramUsedMb}/${stats.ramTotalMb}M"
-            binding.tvThermal.text = stats.thermal
         } catch (_: Throwable) {}
     }
 
@@ -203,11 +232,7 @@ class MainActivity : AppCompatActivity() {
             )
             withContext(Dispatchers.Main) {
                 if (uri != null) {
-                    Snackbar.make(
-                        binding.root,
-                        getString(R.string.saved_success),
-                        Snackbar.LENGTH_LONG
-                    ).show()
+                    Snackbar.make(binding.root, getString(R.string.saved_success), Snackbar.LENGTH_LONG).show()
                 } else toast("Gagal menyimpan")
             }
         }
@@ -220,9 +245,7 @@ class MainActivity : AppCompatActivity() {
                 val path = File(cacheDir, "share_${System.currentTimeMillis()}.png")
                 path.outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
                 val uri = FileProvider.getUriForFile(
-                    this@MainActivity,
-                    "$packageName.fileprovider",
-                    path
+                    this@MainActivity, "$packageName.fileprovider", path
                 )
                 withContext(Dispatchers.Main) {
                     val intent = Intent(Intent.ACTION_SEND).apply {

@@ -12,4 +12,6 @@
     <string name="hint_pick_image">Pilih gambar untuk memulai</string>
     <string name="saved_success">Tersimpan di Pictures/AIUpscaler</string>
     <string name="cd_image_preview">Pratinjau gambar</string>
+    <string name="label_threads">Threads CPU</string>
+    <string name="label_gpu">GPU</string>
 </resources>

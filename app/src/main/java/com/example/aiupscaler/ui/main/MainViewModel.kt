@@ -11,6 +11,7 @@ import com.example.aiupscaler.domain.model.UpscaleRequest
 import com.example.aiupscaler.domain.model.UpscaleResult
 import com.example.aiupscaler.domain.usecase.UpscaleImageUseCase
 import com.example.aiupscaler.ml.engine.Backend
+import com.example.aiupscaler.util.GpuDetector
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -23,6 +24,9 @@ data class MainUiState(
     val source: Bitmap? = null,
     val result: Bitmap? = null,
     val backend: Backend = Backend.CPU,
+    val threadCount: Int = 0,       // 0 = auto
+    val maxThreads: Int = 4,
+    val gpuInfo: GpuDetector.GpuInfo? = null,
     val statusText: String = "Siap",
     val statusKind: StatusKind = StatusKind.IDLE,
     val progressPercent: Int = 0,
@@ -36,17 +40,35 @@ data class MainUiState(
 class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     private val useCase: UpscaleImageUseCase
+    private val gpuInfo: GpuDetector.GpuInfo
 
     init {
         ServiceLocator.init(app)
         useCase = ServiceLocator.provideUpscaleUseCase()
+        gpuInfo = GpuDetector.detect(app)
     }
 
-    private val _state = MutableStateFlow(MainUiState())
+    private val _state = MutableStateFlow(
+        MainUiState(
+            gpuInfo = gpuInfo,
+            maxThreads = Runtime.getRuntime().availableProcessors().coerceAtLeast(1),
+            threadCount = GpuDetector.recommendedCpuThreads()
+        )
+    )
     val state: StateFlow<MainUiState> = _state.asStateFlow()
 
     init {
         _state.update { it.copy(modelAvailable = useCase.isModelAvailable()) }
+        // Log GPU info ke log
+        _state.update {
+            it.copy(log = listOf(
+                "GPU: ${gpuInfo.renderer}",
+                "Vulkan: ${if (gpuInfo.supportsVulkan) "✅ (API ${gpuInfo.vulkanApiLevel})" else "❌"}",
+                "Adreno: ${gpuInfo.adrenoSeries}",
+                "Rekomendasi: ${gpuInfo.recommendedBackend}",
+                "CPU threads: ${GpuDetector.recommendedCpuThreads()}"
+            ))
+        }
     }
 
     fun setSource(bitmap: Bitmap) {
@@ -55,14 +77,18 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 source = bitmap, result = null,
                 statusText = "Siap", statusKind = StatusKind.IDLE,
                 progressPercent = 0, progressText = "Menunggu…",
-                info = "Sumber: ${bitmap.width}×${bitmap.height}",
-                log = listOf("Gambar dimuat: ${bitmap.width}×${bitmap.height}")
+                info = "Sumber: ${bitmap.width}×${bitmap.height}"
             )
         }
     }
 
     fun setBackend(backend: Backend) {
         _state.update { it.copy(backend = backend) }
+    }
+
+    fun setThreadCount(count: Int) {
+        val max = _state.value.maxThreads
+        _state.update { it.copy(threadCount = count.coerceIn(1, max)) }
     }
 
     fun upscale() {
@@ -79,7 +105,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
 
         viewModelScope.launch {
-            val result = useCase(UpscaleRequest(src, s.backend)) { event ->
+            val result = useCase(
+                UpscaleRequest(src, s.backend, s.threadCount)
+            ) { event ->
                 when (event) {
                     is ProgressEvent.Log -> _state.update { st ->
                         st.copy(log = (st.log + event.message).takeLast(40))

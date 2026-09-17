@@ -30,9 +30,11 @@ class UpscaleRepositoryImpl(private val context: Context) : UpscaleRepository {
     ): AppResult<UpscaleResult> = withContext(Dispatchers.Default) {
 
         val startTime = System.currentTimeMillis()
-        emit(ProgressEvent.Log("Memuat model..."))
+        emit(ProgressEvent.Log("Memuat model (threads=${request.threadCount})..."))
 
-        val loadResult = AdaptiveInterpreter.load(context, MODEL_ASSET, request.backend)
+        val loadResult = AdaptiveInterpreter.load(
+            context, MODEL_ASSET, request.backend, request.threadCount
+        )
         when (loadResult) {
             is AppResult.Failure -> {
                 emit(ProgressEvent.Warning("AI tidak tersedia, fallback bilinear"))

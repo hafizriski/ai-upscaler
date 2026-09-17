@@ -13,7 +13,8 @@ import java.nio.ByteOrder
 import java.nio.channels.FileChannel
 
 class AdaptiveInterpreter private constructor(
-    private val interpreter: Interpreter
+    private val interpreter: Interpreter,
+    val threadCount: Int
 ) : AutoCloseable {
 
     val state: InterpreterState
@@ -22,17 +23,18 @@ class AdaptiveInterpreter private constructor(
 
     init {
         state = inspectModel()
-        Telemetry.info("Interpreter", "Model loaded: ${state.describe()}")
+        Telemetry.info(
+            "Interpreter",
+            "Model loaded: ${state.describe()} | threads=$threadCount"
+        )
     }
 
     private fun inspectModel(): InterpreterState {
         val numInputs = interpreter.inputTensorCount
         val numOutputs = interpreter.outputTensorCount
-
         val inTensor = interpreter.getInputTensor(0)
         val inShape = inTensor.shape()
         val inType = inTensor.dataType()
-
         val outTensor = interpreter.getOutputTensor(0)
         val outShape = outTensor.shape()
         val outType = outTensor.dataType()
@@ -120,19 +122,25 @@ class AdaptiveInterpreter private constructor(
     override fun close() { try { interpreter.close() } catch (_: Throwable) {} }
 
     companion object {
-        fun load(context: Context, assetName: String, backend: Backend): AppResult<AdaptiveInterpreter> =
-            runCatchingResult {
-                val opts = DelegateFactory.build(context, backend)
-                val buffer = loadModelBuffer(context, assetName)
-                AdaptiveInterpreter(Interpreter(buffer, opts))
-            }.let { result ->
-                when (result) {
-                    is AppResult.Success -> result
-                    is AppResult.Failure -> AppResult.Failure(
-                        AppError.ModelLoadFailed(result.error.techMessage, result.error.cause)
-                    )
-                }
+        fun load(
+            context: Context,
+            assetName: String,
+            backend: Backend,
+            threadCount: Int = 0
+        ): AppResult<AdaptiveInterpreter> = runCatchingResult {
+            val opts = DelegateFactory.build(context, backend, threadCount)
+            val buffer = loadModelBuffer(context, assetName)
+            val threads = if (threadCount > 0) threadCount
+                          else GpuDetector.recommendedCpuThreads()
+            AdaptiveInterpreter(Interpreter(buffer, opts), threads)
+        }.let { result ->
+            when (result) {
+                is AppResult.Success -> result
+                is AppResult.Failure -> AppResult.Failure(
+                    AppError.ModelLoadFailed(result.error.techMessage, result.error.cause)
+                )
             }
+        }
 
         private fun loadModelBuffer(context: Context, name: String): ByteBuffer {
             context.assets.openFd(name).use { fd ->
@@ -146,3 +154,6 @@ class AdaptiveInterpreter private constructor(
         }
     }
 }
+
+// Import GpuDetector di sini
+import com.example.aiupscaler.util.GpuDetector
