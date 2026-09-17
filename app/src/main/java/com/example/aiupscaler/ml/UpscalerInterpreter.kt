@@ -16,8 +16,10 @@ class UpscalerInterpreter(
 
     private val interpreter: Interpreter
 
-    val inH: Int; val inW: Int
-    val outH: Int; val outW: Int
+    val inH: Int
+    val inW: Int
+    val outH: Int
+    val outW: Int
     val inputIsNCHW: Boolean
     val outputIsNCHW: Boolean
     val inputDataType: DataType
@@ -85,14 +87,24 @@ class UpscalerInterpreter(
 
     private fun buildInputs(image: ByteBuffer): Array<Any> {
         if (!hasSecondInput) return arrayOf(image)
+
         val second = interpreter.getInputTensor(1)
         val shape = second.shape()
         val count = shape.fold(1) { a, b -> a * b }
-        val buf = when (second.dataType()) {
-            DataType.FLOAT32 -> ByteBuffer.allocateDirect(count * 4).order(ByteOrder.nativeOrder())
-                .also { repeat(count) { it.putFloat(1f) }; it.rewind() }
-            DataType.INT32 -> ByteBuffer.allocateDirect(count * 4).order(ByteOrder.nativeOrder())
-                .also { repeat(count) { it.putInt(1) }; it.rewind() }
+
+        val buf: ByteBuffer = when (second.dataType()) {
+            DataType.FLOAT32 -> {
+                val b = ByteBuffer.allocateDirect(count * 4).order(ByteOrder.nativeOrder())
+                for (i in 0 until count) b.putFloat(1f)
+                b.rewind()
+                b
+            }
+            DataType.INT32 -> {
+                val b = ByteBuffer.allocateDirect(count * 4).order(ByteOrder.nativeOrder())
+                for (i in 0 until count) b.putInt(1)
+                b.rewind()
+                b
+            }
             else -> ByteBuffer.allocateDirect(count).order(ByteOrder.nativeOrder())
         }
         return arrayOf(image, buf)

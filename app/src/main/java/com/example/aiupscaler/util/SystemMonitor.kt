@@ -2,6 +2,7 @@ package com.example.aiupscaler.util
 
 import android.app.ActivityManager
 import android.content.Context
+import java.io.File
 
 data class SystemStats(
     val ramUsedMb: Long,
@@ -36,24 +37,30 @@ object SystemMonitor {
         )
     }
 
-    private fun readFreq(): Int = try {
-        val f = java.io.File("/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq")
-        if (f.exists()) (f.readText().trim().toLong() / 1000).toInt() else 0
-    } catch (_: Throwable) { 0 }
+    private fun readFreq(): Int {
+        return try {
+            val f = File("/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq")
+            if (f.exists()) (f.readText().trim().toLong() / 1000).toInt() else 0
+        } catch (_: Throwable) { 0 }
+    }
 
-    private fun readThermal(): String = try {
-        val paths = listOf(
-            "/sys/class/thermal/thermal_zone0/temp",
-            "/sys/class/thermal/thermal_zone1/temp"
-        )
-        for (p in paths) {
-            val f = java.io.File(p)
-            if (f.exists()) {
-                val raw = f.readText().trim().toLong()
-                val c = if (raw > 1000) raw / 1000.0 else raw.toDouble()
-                return String.format("%.1f°C", c)
+    private fun readThermal(): String {
+        return try {
+            val paths = listOf(
+                "/sys/class/thermal/thermal_zone0/temp",
+                "/sys/class/thermal/thermal_zone1/temp"
+            )
+            var result = "—"
+            for (p in paths) {
+                val f = File(p)
+                if (f.exists()) {
+                    val raw = f.readText().trim().toLong()
+                    val c = if (raw > 1000) raw / 1000.0 else raw.toDouble()
+                    result = String.format("%.1f°C", c)
+                    break
+                }
             }
-        }
-        "—"
-    } catch (_: Throwable) { "—" }
+            result
+        } catch (_: Throwable) { "—" }
+    }
 }
