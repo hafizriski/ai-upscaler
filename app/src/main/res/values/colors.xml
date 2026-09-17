@@ -46,4 +46,6 @@
     <color name="md_on_surface_variant">@color/text_secondary</color>
     <color name="md_background">@color/bg_base</color>
     <color name="md_outline">@color/border_default</color>
+    <color name="md_on_primary_container">#6366F1</color>
+    <color name="md_primary_container">#6366F1</color>
 </resources>
