@@ -11,10 +11,5 @@ data class InterpreterState(
     val hasSecondInput: Boolean
 ) {
     val scaleFactor: Int get() = if (inH > 0) outH / inH else 1
-    fun describe(): String = buildString {
-        append("in=${inH}×${inW}($inputType)")
-        append(" out=${outH}×${outW}($outputType)")
-        append(" inputs=$numInputs")
-        if (hasSecondInput) append(" in2=${secondInputShape}($secondInputType)")
-    }
+    fun describe(): String = "in=${inH}×${inW} out=${outH}×${outW}"
 }

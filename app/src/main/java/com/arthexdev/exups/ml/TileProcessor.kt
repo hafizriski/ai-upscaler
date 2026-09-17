@@ -4,7 +4,6 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
 import com.arthexdev.exups.core.result.AppResult
-import com.arthexdev.exups.core.telemetry.Telemetry
 import com.arthexdev.exups.domain.model.ProgressEvent
 import com.arthexdev.exups.ml.engine.AdaptiveInterpreter
 import com.arthexdev.exups.ml.fallback.BilinearUpscaler
@@ -17,15 +16,12 @@ class TileProcessor(private val engine: AdaptiveInterpreter) {
 
     sealed class ProcessOutcome {
         data class Success(
-            val bitmap: Bitmap,
-            val tilesProcessed: Int,
-            val tilesFailed: Int,
-            val elapsedMs: Long
+            val bitmap: Bitmap, val tilesProcessed: Int,
+            val tilesFailed: Int, val elapsedMs: Long
         ) : ProcessOutcome()
         data class Failure(val message: String) : ProcessOutcome()
     }
 
-    // JADIKAN SUSPEND supaya coroutineContext bisa dipanggil
     suspend fun process(src: Bitmap, emit: (ProgressEvent) -> Unit): ProcessOutcome {
         val argb = src.copy(Bitmap.Config.ARGB_8888, false)
         val w = argb.width; val h = argb.height
@@ -51,12 +47,10 @@ class TileProcessor(private val engine: AdaptiveInterpreter) {
         var done = 0; var failed = 0
         val startTime = System.currentTimeMillis()
 
-        emit(ProgressEvent.Log("Total $total tile (${xPositions.size}×${yPositions.size})"))
-
         outer@ for (y in yPositions) {
             for (x in xPositions) {
                 if (done >= total) break@outer
-                coroutineContext.ensureActive()  // ← sekarang valid karena suspend
+                coroutineContext.ensureActive()
 
                 val cw = minOf(tile, w - x); val ch = minOf(tile, h - y)
                 val tileStart = System.currentTimeMillis()
@@ -80,10 +74,7 @@ class TileProcessor(private val engine: AdaptiveInterpreter) {
                     }
                 } catch (e: kotlinx.coroutines.CancellationException) {
                     throw e
-                } catch (e: Throwable) {
-                    Telemetry.warn("Tile", "tile gagal: ${e.message}")
-                    false
-                }
+                } catch (e: Throwable) { false }
 
                 if (!ok) {
                     failed++
@@ -106,7 +97,6 @@ class TileProcessor(private val engine: AdaptiveInterpreter) {
         }
 
         val elapsedTotal = System.currentTimeMillis() - startTime
-        emit(ProgressEvent.Log("Selesai ${elapsedTotal / 1000.0}s"))
         return ProcessOutcome.Success(output, done, failed, elapsedTotal)
     }
 

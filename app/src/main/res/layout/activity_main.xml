@@ -6,7 +6,6 @@
     android:layout_height="match_parent"
     android:background="@color/ios_bg">
 
-    <!-- ═══ iOS NAV BAR ═══ -->
     <LinearLayout
         android:id="@+id/toolbar"
         android:layout_width="0dp"
@@ -16,7 +15,7 @@
         android:gravity="center_vertical"
         android:minHeight="@dimen/toolbar_height"
         android:orientation="horizontal"
-        android:paddingHorizontal="@dimen/sp_4"
+        android:paddingHorizontal="@dimen/sp_5"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
@@ -31,7 +30,6 @@
             android:text="@string/app_name"/>
     </LinearLayout>
 
-    <!-- ═══ HOME TAB ═══ -->
     <androidx.core.widget.NestedScrollView
         android:id="@+id/tabHome"
         android:layout_width="0dp"
@@ -51,16 +49,13 @@
             android:paddingHorizontal="@dimen/sp_5"
             android:paddingTop="@dimen/sp_3">
 
-            <!-- Preview Card -->
             <com.google.android.material.card.MaterialCardView
                 style="@style/CardSurface"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
-
                 <FrameLayout
                     android:layout_width="match_parent"
                     android:layout_height="@dimen/preview_card_height">
-
                     <ImageView
                         android:id="@+id/imagePreview"
                         android:layout_width="match_parent"
@@ -76,14 +71,12 @@
                         android:layout_gravity="center"
                         android:gravity="center"
                         android:orientation="vertical">
-
                         <ImageView
-                            android:layout_width="56dp"
-                            android:layout_height="56dp"
-                            android:alpha="0.4"
+                            android:layout_width="80dp"
+                            android:layout_height="80dp"
+                            android:alpha="0.5"
                             android:src="@mipmap/ic_launcher"
-                            app:tint="@color/ios_label_secondary"/>
-
+                            android:contentDescription="@string/app_name"/>
                         <TextView
                             style="@style/IOS_Subheadline"
                             android:layout_width="wrap_content"
@@ -107,7 +100,6 @@
                         android:gravity="center"
                         android:orientation="vertical"
                         android:visibility="gone">
-
                         <com.google.android.material.progressindicator.CircularProgressIndicator
                             android:id="@+id/circularProgress"
                             android:layout_width="wrap_content"
@@ -115,6 +107,13 @@
                             android:indeterminate="true"
                             app:indicatorColor="@color/ios_blue"
                             app:trackColor="@color/ios_bg_tertiary"/>
+                        <TextView
+                            android:id="@+id/tvOverlayPercent"
+                            style="@style/IOS_Title3"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/sp_3"
+                            android:textColor="@color/ios_blue"/>
                     </LinearLayout>
                 </FrameLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -128,7 +127,70 @@
                 android:gravity="center"
                 android:text="@string/hint_no_result"/>
 
-            <!-- Model Picker — iOS Grouped Inset -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnUpscale"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/button_height"
+                android:layout_marginTop="@dimen/sp_4"
+                android:text="@string/action_upscale"
+                android:textAllCaps="false"
+                android:textColor="@color/ios_label"
+                android:textSize="@dimen/ios_headline"
+                android:textStyle="bold"
+                android:visibility="gone"
+                app:backgroundTint="@color/ios_blue"
+                app:cornerRadius="@dimen/r_pill"
+                app:elevation="0dp"
+                app:icon="@android:drawable/ic_menu_edit"
+                app:iconTint="@color/ios_label"/>
+
+            <LinearLayout
+                android:id="@+id/resultActions"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/sp_3"
+                android:orientation="horizontal"
+                android:visibility="gone">
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnSave"
+                    style="@style/Widget.Material3.Button.TonalButton"
+                    android:layout_width="0dp"
+                    android:layout_height="@dimen/button_height"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="@dimen/sp_2"
+                    android:text="@string/action_save"
+                    android:textAllCaps="false"
+                    android:textColor="@color/ios_blue"
+                    android:textSize="@dimen/ios_headline"
+                    android:textStyle="bold"
+                    app:backgroundTint="@color/ios_fill_tertiary"
+                    app:cornerRadius="@dimen/r_pill"
+                    app:elevation="0dp"/>
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnShare"
+                    style="@style/Widget.Material3.Button.TonalButton"
+                    android:layout_width="0dp"
+                    android:layout_height="@dimen/button_height"
+                    android:layout_weight="1"
+                    android:text="@string/action_share"
+                    android:textAllCaps="false"
+                    android:textColor="@color/ios_label"
+                    android:textSize="@dimen/ios_headline"
+                    android:textStyle="bold"
+                    app:backgroundTint="@color/ios_blue"
+                    app:cornerRadius="@dimen/r_pill"
+                    app:elevation="0dp"/>
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/emptyActionHint"
+                style="@style/IOS_Caption1"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/sp_4"
+                android:gravity="center"
+                android:text="@string/hint_pick_first"/>
+
             <TextView
                 style="@style/IOS_Footnote"
                 android:layout_width="wrap_content"
@@ -143,18 +205,15 @@
                 style="@style/CardSurface"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
-
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:padding="@dimen/sp_4">
-
                     <HorizontalScrollView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:scrollbars="none">
-
                         <com.google.android.material.chip.ChipGroup
                             android:id="@+id/chipGroupModels"
                             android:layout_width="wrap_content"
@@ -164,7 +223,6 @@
                             app:singleSelection="true"
                             app:selectionRequired="true"/>
                     </HorizontalScrollView>
-
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -172,7 +230,6 @@
                         android:background="@drawable/bg_info_panel"
                         android:orientation="vertical"
                         android:padding="@dimen/sp_3">
-
                         <TextView
                             android:id="@+id/tvModelName"
                             style="@style/IOS_Body"
@@ -180,7 +237,6 @@
                             android:layout_height="wrap_content"
                             android:textStyle="bold"
                             android:text="—"/>
-
                         <TextView
                             android:id="@+id/tvModelDesc"
                             style="@style/IOS_Caption1"
@@ -188,13 +244,11 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
                             android:text="—"/>
-
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="@dimen/sp_2"
                             android:orientation="horizontal">
-
                             <TextView
                                 android:id="@+id/chipScale"
                                 style="@style/IOS_Caption2"
@@ -204,7 +258,6 @@
                                 android:paddingHorizontal="8dp"
                                 android:paddingVertical="4dp"
                                 android:text="×4"/>
-
                             <TextView
                                 android:id="@+id/chipSize"
                                 style="@style/IOS_Caption2"
@@ -215,7 +268,6 @@
                                 android:paddingHorizontal="8dp"
                                 android:paddingVertical="4dp"
                                 android:text="— MB"/>
-
                             <TextView
                                 android:id="@+id/chipSpeed"
                                 style="@style/IOS_Caption2"
@@ -231,7 +283,6 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Status -->
             <TextView
                 style="@style/IOS_Footnote"
                 android:layout_width="wrap_content"
@@ -246,25 +297,21 @@
                 style="@style/CardSurface"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
-
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:padding="@dimen/sp_4">
-
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:gravity="center_vertical"
                         android:orientation="horizontal">
-
                         <View
                             android:id="@+id/statusDot"
                             android:layout_width="10dp"
                             android:layout_height="10dp"
                             android:background="@drawable/dot_idle"/>
-
                         <TextView
                             android:id="@+id/tvStatus"
                             style="@style/IOS_Headline"
@@ -273,7 +320,6 @@
                             android:layout_marginStart="@dimen/sp_2"
                             android:layout_weight="1"
                             android:text="@string/status_idle"/>
-
                         <TextView
                             android:id="@+id/tvPercent"
                             style="@style/IOS_Callout"
@@ -283,7 +329,6 @@
                             android:textColor="@color/ios_blue"
                             android:textStyle="bold"/>
                     </LinearLayout>
-
                     <com.google.android.material.progressindicator.LinearProgressIndicator
                         android:id="@+id/linearProgress"
                         android:layout_width="match_parent"
@@ -294,7 +339,6 @@
                         app:trackColor="@color/ios_bg_tertiary"
                         app:trackCornerRadius="2dp"
                         app:trackThickness="3dp"/>
-
                     <TextView
                         android:id="@+id/tvProgress"
                         style="@style/IOS_Caption2"
@@ -303,7 +347,6 @@
                         android:layout_marginTop="@dimen/sp_2"
                         android:fontFamily="monospace"
                         android:text="Menunggu…"/>
-
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnCancel"
                         style="@style/Widget.Material3.Button.TextButton"
@@ -314,27 +357,22 @@
                         android:textAllCaps="false"
                         android:textColor="@color/ios_red"
                         android:visibility="gone"/>
-
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
                         android:layout_marginVertical="@dimen/sp_4"
                         android:background="@color/ios_separator"/>
-
-                    <!-- Threads slider -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:gravity="center_vertical"
                         android:orientation="horizontal">
-
                         <TextView
                             style="@style/IOS_Body"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:text="@string/label_threads"/>
-
                         <TextView
                             android:id="@+id/tvThreadCount"
                             style="@style/IOS_Body"
@@ -345,7 +383,6 @@
                             android:textStyle="bold"
                             android:text="8"/>
                     </LinearLayout>
-
                     <com.google.android.material.slider.Slider
                         android:id="@+id/sliderThreads"
                         android:layout_width="match_parent"
@@ -359,32 +396,27 @@
                         app:thumbColor="@color/ios_blue"
                         app:trackColorActive="@color/ios_blue"
                         app:trackColorInactive="@color/ios_bg_tertiary"/>
-
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
                         android:layout_marginVertical="@dimen/sp_4"
                         android:background="@color/ios_separator"/>
-
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:weightSum="3">
-
                         <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:orientation="vertical">
-
                             <TextView
                                 style="@style/IOS_Caption2"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/label_cpu"
                                 android:textAllCaps="true"/>
-
                             <TextView
                                 android:id="@+id/tvCpu"
                                 style="@style/IOS_Footnote"
@@ -396,20 +428,17 @@
                                 android:textColor="@color/ios_label"
                                 android:textStyle="bold"/>
                         </LinearLayout>
-
                         <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:orientation="vertical">
-
                             <TextView
                                 style="@style/IOS_Caption2"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/label_ram"
                                 android:textAllCaps="true"/>
-
                             <TextView
                                 android:id="@+id/tvRam"
                                 style="@style/IOS_Footnote"
@@ -421,20 +450,17 @@
                                 android:textColor="@color/ios_label"
                                 android:textStyle="bold"/>
                         </LinearLayout>
-
                         <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:orientation="vertical">
-
                             <TextView
                                 style="@style/IOS_Caption2"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/label_gpu"
                                 android:textAllCaps="true"/>
-
                             <TextView
                                 android:id="@+id/tvGpu"
                                 style="@style/IOS_Footnote"
@@ -447,7 +473,6 @@
                                 android:textStyle="bold"/>
                         </LinearLayout>
                     </LinearLayout>
-
                     <TextView
                         android:id="@+id/tvVulkan"
                         style="@style/IOS_Caption2"
@@ -456,7 +481,6 @@
                         android:layout_marginTop="@dimen/sp_3"
                         android:fontFamily="monospace"
                         android:text="Vulkan: —"/>
-
                     <LinearLayout
                         android:id="@+id/logHeader"
                         android:layout_width="match_parent"
@@ -468,7 +492,6 @@
                         android:gravity="center_vertical"
                         android:orientation="horizontal"
                         android:paddingVertical="@dimen/sp_2">
-
                         <TextView
                             style="@style/IOS_Footnote"
                             android:layout_width="0dp"
@@ -476,7 +499,6 @@
                             android:layout_weight="1"
                             android:text="@string/label_detail"
                             android:textColor="@color/ios_blue"/>
-
                         <TextView
                             android:id="@+id/logChevron"
                             android:layout_width="wrap_content"
@@ -484,7 +506,6 @@
                             android:text="▸"
                             android:textColor="@color/ios_blue"/>
                     </LinearLayout>
-
                     <TextView
                         android:id="@+id/tvLog"
                         style="@style/IOS_Caption2"
@@ -511,7 +532,6 @@
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
-    <!-- ═══ GALLERY TAB ═══ -->
     <LinearLayout
         android:id="@+id/tabGallery"
         android:layout_width="0dp"
@@ -524,7 +544,6 @@
         app:layout_constraintBottom_toTopOf="@id/bottomNav"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
-
         <TextView
             style="@style/IOS_Footnote"
             android:layout_width="wrap_content"
@@ -532,7 +551,6 @@
             android:layout_marginStart="@dimen/sp_1"
             android:text="@string/gallery_title"
             android:textAllCaps="true"/>
-
         <TextView
             android:id="@+id/tvGalleryCount"
             style="@style/IOS_Caption1"
@@ -541,7 +559,6 @@
             android:layout_marginTop="@dimen/sp_1"
             android:layout_marginStart="@dimen/sp_1"
             android:text="0 item"/>
-
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvGallery"
             android:layout_width="match_parent"
@@ -550,7 +567,6 @@
             android:layout_weight="1"
             android:clipToPadding="false"
             android:paddingBottom="@dimen/sp_4"/>
-
         <LinearLayout
             android:id="@+id/galleryEmpty"
             android:layout_width="match_parent"
@@ -559,14 +575,12 @@
             android:gravity="center"
             android:orientation="vertical"
             android:visibility="gone">
-
             <ImageView
                 android:layout_width="64dp"
                 android:layout_height="64dp"
                 android:alpha="0.3"
                 android:src="@android:drawable/ic_menu_gallery"
                 app:tint="@color/ios_label_secondary"/>
-
             <TextView
                 style="@style/IOS_Body"
                 android:layout_width="wrap_content"
@@ -577,7 +591,6 @@
         </LinearLayout>
     </LinearLayout>
 
-    <!-- ═══ PROFILE TAB ═══ -->
     <androidx.core.widget.NestedScrollView
         android:id="@+id/tabProfile"
         android:layout_width="0dp"
@@ -590,13 +603,11 @@
         app:layout_constraintBottom_toTopOf="@id/bottomNav"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
-
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_horizontal"
             android:orientation="vertical">
-
             <FrameLayout
                 android:id="@+id/avatarContainer"
                 android:layout_width="@dimen/profile_avatar"
@@ -605,7 +616,6 @@
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:clickable="true"
                 android:focusable="true">
-
                 <ImageView
                     android:id="@+id/ivProfilePhoto"
                     android:layout_width="match_parent"
@@ -613,7 +623,6 @@
                     android:background="@drawable/bg_avatar"
                     android:contentDescription="@string/cd_profile_photo"
                     android:scaleType="centerCrop"/>
-
                 <ImageView
                     android:id="@+id/ivProfilePhotoDefault"
                     android:layout_width="match_parent"
@@ -621,7 +630,6 @@
                     android:padding="32dp"
                     android:src="@android:drawable/ic_menu_myplaces"
                     app:tint="@color/ios_label_secondary"/>
-
                 <ImageView
                     android:layout_width="36dp"
                     android:layout_height="36dp"
@@ -641,7 +649,6 @@
                 android:hint="@string/label_username"
                 app:boxStrokeColor="@color/ios_blue"
                 app:hintTextColor="@color/ios_label_secondary">
-
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/etUsername"
                     android:layout_width="match_parent"
@@ -649,13 +656,14 @@
                     android:hint="@string/hint_username"
                     android:inputType="textPersonName"
                     android:maxLines="1"
-                    android:textColor="@color/ios_label"/>
+                    android:textColor="@color/ios_label"
+                    android:textSize="@dimen/ios_body"/>
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnSaveProfile"
                 android:layout_width="match_parent"
-                android:layout_height="52dp"
+                android:layout_height="@dimen/button_height"
                 android:layout_marginTop="@dimen/sp_4"
                 android:text="@string/action_save_profile"
                 android:textAllCaps="false"
@@ -678,7 +686,6 @@
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
-    <!-- ═══ iOS FAB ═══ -->
     <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
         android:id="@+id/fabAdd"
         android:layout_width="wrap_content"
@@ -687,6 +694,7 @@
         android:text="@string/action_add"
         android:textAllCaps="false"
         android:textColor="@color/ios_label"
+        android:textSize="@dimen/ios_headline"
         android:textStyle="bold"
         app:backgroundTint="@color/ios_blue"
         app:cornerRadius="@dimen/r_pill"
@@ -697,7 +705,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
 
-    <!-- ═══ iOS TAB BAR ═══ -->
     <LinearLayout
         android:id="@+id/bottomNav"
         android:layout_width="0dp"
@@ -724,14 +731,12 @@
             android:gravity="center"
             android:orientation="vertical"
             android:paddingVertical="@dimen/sp_1">
-
             <ImageView
                 android:id="@+id/ivNavHome"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:src="@android:drawable/ic_menu_gallery"
                 app:tint="@color/ios_blue"/>
-
             <TextView
                 android:id="@+id/tvNavHome"
                 style="@style/IOS_Caption2"
@@ -753,14 +758,12 @@
             android:gravity="center"
             android:orientation="vertical"
             android:paddingVertical="@dimen/sp_1">
-
             <ImageView
                 android:id="@+id/ivNavGallery"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:src="@android:drawable/ic_menu_sort_by_size"
                 app:tint="@color/ios_label_secondary"/>
-
             <TextView
                 android:id="@+id/tvNavGallery"
                 style="@style/IOS_Caption2"
@@ -781,14 +784,12 @@
             android:gravity="center"
             android:orientation="vertical"
             android:paddingVertical="@dimen/sp_1">
-
             <ImageView
                 android:id="@+id/ivNavProfile"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:src="@android:drawable/ic_menu_myplaces"
                 app:tint="@color/ios_label_secondary"/>
-
             <TextView
                 android:id="@+id/tvNavProfile"
                 style="@style/IOS_Caption2"

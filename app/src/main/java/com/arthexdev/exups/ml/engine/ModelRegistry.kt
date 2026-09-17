@@ -16,7 +16,6 @@ data class ModelSpec(
 )
 
 object ModelRegistry {
-
     private const val RELEASE_BASE =
         "https://github.com/hafizriski/ai-upscaler/releases/download/v1-models"
 
@@ -26,7 +25,7 @@ object ModelRegistry {
             displayName = "Real-ESRGAN x4plus",
             fileName = "realesrgan_x4plus.tflite",
             remoteUrl = "$RELEASE_BASE/realesrgan_x4plus.tflite",
-            description = "Kualitas tertinggi untuk foto natural (perlu download 64 MB)",
+            description = "Kualitas tertinggi untuk foto natural",
             scale = 4,
             approxSizeMb = 64,
             recommendedFor = "Foto, pemandangan, portrait",
@@ -47,14 +46,7 @@ object ModelRegistry {
         )
     )
 
-    fun getById(id: String): ModelSpec =
-        ALL.firstOrNull { it.id == id } ?: ALL.last()
-
-    /** Model yang ready dipakai (bundled ATAU sudah didownload) */
-    fun getReady(context: Context): List<ModelSpec> =
-        ALL.filter { isReady(context, it) }
-
-    /** Semua model yang ditampilkan ke user (termasuk yang belum didownload) */
+    fun getById(id: String): ModelSpec = ALL.firstOrNull { it.id == id } ?: ALL.last()
     fun getAllForDisplay(): List<ModelSpec> = ALL
 
     fun isReady(context: Context, spec: ModelSpec): Boolean {
@@ -64,16 +56,9 @@ object ModelRegistry {
             } catch (_: Throwable) {}
         }
         return ModelDownloader.isDownloaded(
-            context, spec.fileName,
-            spec.approxSizeMb * 1024L * 1024L
+            context, spec.fileName, spec.approxSizeMb * 1024L * 1024L
         )
     }
 
-    fun isDownloaded(context: Context, spec: ModelSpec): Boolean =
-        ModelDownloader.isDownloaded(
-            context, spec.fileName,
-            spec.approxSizeMb * 1024L * 1024L
-        )
-
-    fun hasAny(context: Context): Boolean = getReady(context).isNotEmpty()
+    fun hasAny(context: Context): Boolean = ALL.any { isReady(context, it) }
 }

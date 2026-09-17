@@ -4,8 +4,6 @@ import android.content.Context
 import com.arthexdev.exups.core.error.AppError
 import com.arthexdev.exups.core.result.AppResult
 import com.arthexdev.exups.core.result.runCatchingResult
-import com.arthexdev.exups.core.telemetry.Telemetry
-import com.arthexdev.exups.util.GpuDetector
 import org.tensorflow.lite.DataType
 import org.tensorflow.lite.Interpreter
 import java.io.FileInputStream
@@ -14,17 +12,14 @@ import java.nio.ByteOrder
 import java.nio.channels.FileChannel
 
 class AdaptiveInterpreter private constructor(
-    private val interpreter: Interpreter,
-    val threadCount: Int
+    private val interpreter: Interpreter
 ) : AutoCloseable {
 
     val state: InterpreterState
-
     @Volatile private var workingStrategyIndex: Int = -1
 
     init {
         state = inspectModel()
-        Telemetry.info("Interpreter", "Loaded: ${state.describe()} | threads=$threadCount")
     }
 
     private fun inspectModel(): InterpreterState {
@@ -74,10 +69,8 @@ class AdaptiveInterpreter private constructor(
 
         val outputs = mutableMapOf<Int, Any>(0 to output)
         val strategies = StrategyBuilder.build(input, state)
-
         val ordered = if (workingStrategyIndex in strategies.indices) {
-            listOf(strategies[workingStrategyIndex]) +
-                strategies.filterIndexed { i, _ -> i != workingStrategyIndex }
+            listOf(strategies[workingStrategyIndex]) + strategies.filterIndexed { i, _ -> i != workingStrategyIndex }
         } else strategies
 
         var lastError: Throwable? = null
@@ -115,12 +108,11 @@ class AdaptiveInterpreter private constructor(
     override fun close() { try { interpreter.close() } catch (_: Throwable) {} }
 
     companion object {
-        fun load(context: Context, spec: ModelSpec, backend: Backend, threadCount: Int = 0): AppResult<AdaptiveInterpreter> =
+        fun load(context: Context, spec: ModelSpec, backend: Backend, threadCount: Int = 8): AppResult<AdaptiveInterpreter> =
             runCatchingResult {
                 val opts = DelegateFactory.build(context, backend, threadCount)
                 val buffer = loadModelBuffer(context, spec)
-                val threads = if (threadCount > 0) threadCount else GpuDetector.recommendedCpuThreads()
-                AdaptiveInterpreter(Interpreter(buffer, opts), threads)
+                AdaptiveInterpreter(Interpreter(buffer, opts))
             }.let { result ->
                 when (result) {
                     is AppResult.Success -> result
@@ -130,18 +122,14 @@ class AdaptiveInterpreter private constructor(
             }
 
         private fun loadModelBuffer(context: Context, spec: ModelSpec): ByteBuffer {
-            // 1. Downloaded file (untuk x4plus)
             val localFile = ModelDownloader.getLocalPath(context, spec.fileName)
             if (localFile.exists() && localFile.length() > 1024) {
-                Telemetry.info("Interpreter", "Load dari storage: ${localFile.name}")
                 FileInputStream(localFile).use { fis ->
                     return fis.channel.map(
                         FileChannel.MapMode.READ_ONLY, 0, fis.channel.size()
                     ).order(ByteOrder.nativeOrder())
                 }
             }
-            // 2. Assets (untuk x4v3 bundled)
-            Telemetry.info("Interpreter", "Load dari assets: models/${spec.fileName}")
             context.assets.openFd("models/${spec.fileName}").use { fd ->
                 FileInputStream(fd.fileDescriptor).use { fis ->
                     return fis.channel.map(

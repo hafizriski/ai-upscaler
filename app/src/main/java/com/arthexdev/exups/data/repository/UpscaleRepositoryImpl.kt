@@ -12,9 +12,7 @@ import com.arthexdev.exups.ml.engine.AdaptiveInterpreter
 import com.arthexdev.exups.ml.engine.ModelRegistry
 import com.arthexdev.exups.ml.fallback.BilinearUpscaler
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
-import kotlin.coroutines.coroutineContext
 
 class UpscaleRepositoryImpl(private val context: Context) : UpscaleRepository {
 
@@ -29,19 +27,15 @@ class UpscaleRepositoryImpl(private val context: Context) : UpscaleRepository {
         val spec = ModelRegistry.getById(request.modelId)
 
         emit(ProgressEvent.Log("Model: ${spec.displayName}"))
-        emit(ProgressEvent.Log("Memuat interpreter…"))
-
-        coroutineContext.ensureActive()
 
         val loadResult = AdaptiveInterpreter.load(context, spec, request.backend, request.threadCount)
         when (loadResult) {
             is AppResult.Failure -> {
-                emit(ProgressEvent.Warning("Model gagal, fallback bilinear"))
+                emit(ProgressEvent.Warning("Model gagal, fallback"))
                 return@withContext fallback(request, startTime, emit)
             }
             is AppResult.Success -> {
                 val engine = loadResult.data
-                emit(ProgressEvent.Log("Model: ${engine.state.describe()}"))
                 return@withContext try {
                     when (val out = TileProcessor(engine).process(request.sourceBitmap, emit)) {
                         is TileProcessor.ProcessOutcome.Success -> {
@@ -73,7 +67,6 @@ class UpscaleRepositoryImpl(private val context: Context) : UpscaleRepository {
 
     private fun fallback(request: UpscaleRequest, startTime: Long, emit: (ProgressEvent) -> Unit): AppResult<UpscaleResult> {
         return try {
-            emit(ProgressEvent.Log("Fallback bilinear 4×"))
             val out = BilinearUpscaler.upscale(request.sourceBitmap, 4)
             val result = UpscaleResult(out, request.sourceBitmap.width, request.sourceBitmap.height,
                 4, System.currentTimeMillis() - startTime, 1, 0, true, "Bilinear")

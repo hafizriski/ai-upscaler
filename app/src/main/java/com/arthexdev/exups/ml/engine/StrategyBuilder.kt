@@ -22,22 +22,6 @@ object StrategyBuilder {
         s += Strategy(arrayOf(imageInput, buf(type, count) { b ->
             for (i in 0 until count) putVal(b, type, 1L)
         }))
-        s += Strategy(arrayOf(imageInput, buf(type, count) { b ->
-            for (i in 0 until count) putVal(b, type, 4L)
-        }))
-        s += Strategy(arrayOf(imageInput, buf(type, count) { b ->
-            for (i in 0 until count) putVal(b, type, 0L)
-        }))
-        if (type == DataType.FLOAT32) {
-            s += Strategy(arrayOf(imageInput, buf(type, count) { b ->
-                for (i in 0 until count) b.putFloat(0.5f)
-            }))
-        }
-        if (count == 2) {
-            s += Strategy(arrayOf(imageInput, buf(type, count) { b ->
-                putVal(b, type, state.inW.toLong()); putVal(b, type, state.inH.toLong())
-            }))
-        }
         return s
     }
 

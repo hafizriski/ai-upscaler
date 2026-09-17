@@ -17,21 +17,4 @@ object NetworkUtils {
             } else false
         } catch (_: Throwable) { false }
     }
-
-    fun isWifi(context: Context): Boolean {
-        val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        return try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                val network = cm.activeNetwork ?: return false
-                val caps = cm.getNetworkCapabilities(network) ?: return false
-                caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
-            } else false
-        } catch (_: Throwable) { false }
-    }
-
-    fun describe(context: Context): String = when {
-        !isOnline(context) -> "Tidak ada koneksi"
-        isWifi(context) -> "WiFi"
-        else -> "Data seluler"
-    }
 }

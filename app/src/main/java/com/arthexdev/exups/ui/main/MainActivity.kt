@@ -1,6 +1,5 @@
 package com.arthexdev.exups.ui.main
 
-import android.animation.ObjectAnimator
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -10,15 +9,11 @@ import android.os.Handler
 import android.os.Looper
 import android.view.HapticFeedbackConstants
 import android.view.View
-import android.view.animation.OvershootInterpolator
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
-import androidx.dynamicanimation.animation.DynamicAnimation
-import androidx.dynamicanimation.animation.SpringAnimation
-import androidx.dynamicanimation.animation.SpringForce
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -32,6 +27,7 @@ import com.arthexdev.exups.ml.engine.ModelRegistry
 import com.arthexdev.exups.ml.engine.ModelSpec
 import com.arthexdev.exups.ui.gallery.GalleryAdapter
 import com.arthexdev.exups.util.ImageSaver
+import com.arthexdev.exups.util.NotificationHelper
 import com.arthexdev.exups.util.PermissionHelper
 import com.arthexdev.exups.util.SystemMonitor
 import com.google.android.material.chip.Chip
@@ -39,6 +35,7 @@ import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
 
 class MainActivity : AppCompatActivity() {
 
@@ -62,7 +59,7 @@ class MainActivity : AppCompatActivity() {
             if (profileRepo.savePhotoFromUri(it)) {
                 loadProfilePhoto()
                 toast("Foto profil tersimpan")
-            } else toast("Gagal simpan foto")
+            }
         }
     }
 
@@ -86,11 +83,11 @@ class MainActivity : AppCompatActivity() {
 
         profileRepo = ProfileRepository(this)
         galleryRepo = GalleryRepository(this)
+        NotificationHelper.createChannels(this)
 
         setupGallery()
         setupProfile()
         setupListeners()
-        setupAnimations()
         observeState()
         ensurePermissions()
         showTab(0)
@@ -124,12 +121,8 @@ class MainActivity : AppCompatActivity() {
         binding.btnSaveProfile.setOnClickListener {
             it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
             val username = binding.etUsername.text?.toString()?.trim() ?: ""
-            if (username.isEmpty()) {
-                toast("Username tidak boleh kosong")
-                return@setOnClickListener
-            }
+            if (username.isEmpty()) { toast("Username tidak boleh kosong"); return@setOnClickListener }
             profileRepo.setUsername(username)
-            springScale(it)
             Snackbar.make(binding.root, getString(R.string.profile_saved), Snackbar.LENGTH_SHORT).show()
         }
     }
@@ -146,51 +139,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun setupAnimations() {
-        // iOS spring animation for FAB
-        binding.fabAdd.scaleX = 0f
-        binding.fabAdd.scaleY = 0f
-        SpringAnimation(binding.fabAdd, DynamicAnimation.SCALE_X, 1f).apply {
-            spring = SpringForce(1f).apply {
-                dampingRatio = SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY
-                stiffness = SpringForce.STIFFNESS_LOW
-            }
-            setStartValue(0f)
-            start()
-        }
-        SpringAnimation(binding.fabAdd, DynamicAnimation.SCALE_Y, 1f).apply {
-            spring = SpringForce(1f).apply {
-                dampingRatio = SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY
-                stiffness = SpringForce.STIFFNESS_LOW
-            }
-            setStartValue(0f)
-            start()
-        }
-
-        // Bottom nav slide up
-        binding.bottomNav.translationY = 100f
-        binding.bottomNav.animate().translationY(0f).alpha(1f).setDuration(400).start()
-    }
-
-    private fun springScale(v: View) {
-        SpringAnimation(v, DynamicAnimation.SCALE_X, 1f).apply {
-            spring = SpringForce(1f).apply {
-                dampingRatio = SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY
-            }
-            setStartValue(0.92f)
-            start()
-        }
-        SpringAnimation(v, DynamicAnimation.SCALE_Y, 1f).apply {
-            spring = SpringForce(1f).apply {
-                dampingRatio = SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY
-            }
-            setStartValue(0.92f)
-            start()
-        }
-    }
-
     private fun ensurePermissions() {
-        if (!PermissionHelper.hasStoragePermission(this)) {
+        if (!PermissionHelper.hasPermission(this)) {
             requestPermission.launch(PermissionHelper.getRequiredPermissions())
         }
     }
@@ -203,31 +153,27 @@ class MainActivity : AppCompatActivity() {
     private fun setupListeners() {
         binding.fabAdd.setOnClickListener {
             it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-            springScale(it)
             if (!PermissionHelper.hasStoragePermission(this)) {
                 requestPermission.launch(PermissionHelper.getRequiredPermissions())
             } else pick.launch("image/*")
         }
 
-        binding.navHome.setOnClickListener {
+        binding.btnUpscale.setOnClickListener {
             it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-            showTab(0)
+            vm.ensureModelAndUpscale()
         }
+        binding.btnSave.setOnClickListener { saveResult() }
+        binding.btnShare.setOnClickListener { shareResult() }
+
+        binding.navHome.setOnClickListener { showTab(0) }
         binding.navGallery.setOnClickListener {
-            it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-            showTab(1)
-            refreshGallery()
+            showTab(1); refreshGallery()
         }
         binding.navProfile.setOnClickListener {
-            it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-            showTab(2)
-            loadProfilePhoto()
+            showTab(2); loadProfilePhoto()
         }
 
-        binding.btnCancel.setOnClickListener {
-            vm.cancel()
-            toast("Dibatalkan")
-        }
+        binding.btnCancel.setOnClickListener { vm.cancel(); toast("Dibatalkan") }
 
         val s = vm.state.value
         binding.sliderThreads.valueTo = s.maxThreads.toFloat().coerceAtLeast(1f)
@@ -244,22 +190,13 @@ class MainActivity : AppCompatActivity() {
 
         binding.logHeader.setOnClickListener {
             val visible = binding.tvLog.visibility == View.VISIBLE
-            if (visible) {
-                binding.tvLog.animate().alpha(0f).setDuration(150).withEndAction {
-                    binding.tvLog.visibility = View.GONE
-                }.start()
-            } else {
-                binding.tvLog.visibility = View.VISIBLE
-                binding.tvLog.alpha = 0f
-                binding.tvLog.animate().alpha(1f).setDuration(150).start()
-            }
+            binding.tvLog.visibility = if (visible) View.GONE else View.VISIBLE
             binding.logChevron.text = if (visible) "▸" else "▾"
         }
     }
 
     private fun showTab(index: Int) {
         currentTab = index
-
         binding.tabHome.visibility = View.GONE
         binding.tabGallery.visibility = View.GONE
         binding.tabProfile.visibility = View.GONE
@@ -292,10 +229,6 @@ class MainActivity : AppCompatActivity() {
                 binding.tvNavProfile.setTextColor(getColor(R.color.ios_blue))
             }
         }
-
-        val target = when (index) { 0 -> binding.tabHome; 1 -> binding.tabGallery; else -> binding.tabProfile }
-        target.alpha = 0f
-        target.animate().alpha(1f).setDuration(200).start()
     }
 
     private fun buildModelChips(models: List<ModelSpec>, selectedId: String) {
@@ -308,11 +241,8 @@ class MainActivity : AppCompatActivity() {
                 isCheckable = true
                 isChecked = spec.id == selectedId
                 isChipIconVisible = false
-                textSize = 15f
-                setOnClickListener {
-                    it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                    vm.setModel(spec.id)
-                }
+                textSize = 12f
+                setOnClickListener { vm.setModel(spec.id) }
             }
             binding.chipGroupModels.addView(chip)
             chipModelMap[spec.id] = chip
@@ -320,14 +250,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateModelDetail(spec: ModelSpec?) {
-        if (spec == null) {
-            binding.tvModelName.text = "—"
-            binding.tvModelDesc.text = "—"
-            binding.chipScale.text = "—"
-            binding.chipSize.text = "— MB"
-            binding.chipSpeed.text = "—"
-            return
-        }
+        if (spec == null) return
         val ready = ModelRegistry.isReady(this, spec)
         binding.tvModelName.text = spec.displayName + if (ready) "" else " · perlu download"
         binding.tvModelDesc.text = spec.description
@@ -369,12 +292,7 @@ class MainActivity : AppCompatActivity() {
                         binding.progressScrim.visibility = View.VISIBLE
                         binding.circularProgress.isIndeterminate = s.progressPercent == 0
                         if (s.progressPercent > 0) binding.circularProgress.setProgressCompat(s.progressPercent, true)
-                    } else if (s.progressPercent > 0 && s.progressPercent < 100) {
-                        binding.linearProgress.visibility = View.VISIBLE
-                        binding.linearProgress.isIndeterminate = false
-                        binding.linearProgress.setProgressCompat(s.progressPercent, true)
-                        binding.progressOverlay.visibility = View.GONE
-                        binding.progressScrim.visibility = View.GONE
+                        binding.tvOverlayPercent.text = if (s.progressPercent > 0) "${s.progressPercent}%" else ""
                     } else {
                         binding.linearProgress.visibility = View.INVISIBLE
                         binding.progressOverlay.visibility = View.GONE
@@ -384,16 +302,22 @@ class MainActivity : AppCompatActivity() {
                     binding.btnCancel.visibility = if (s.canCancel) View.VISIBLE else View.GONE
                     binding.fabAdd.isEnabled = !busy
 
-                    binding.tvThreadCount.text = s.threadCount.toString()
-                    binding.sliderThreads.isEnabled = !busy
-
-                    binding.tvLog.text = s.log.takeLast(14).joinToString("\n")
+                    val hasSource = s.source != null
+                    val hasResult = s.result != null
+                    binding.btnUpscale.visibility =
+                        if (hasSource && !hasResult && !busy) View.VISIBLE else View.GONE
+                    binding.resultActions.visibility =
+                        if (hasResult && !busy) View.VISIBLE else View.GONE
+                    binding.emptyActionHint.visibility =
+                        if (!hasSource) View.VISIBLE else View.GONE
 
                     if (binding.chipGroupModels.childCount != s.allModels.size) {
                         buildModelChips(s.allModels, s.selectedModelId)
                     } else chipModelMap[s.selectedModelId]?.isChecked = true
                     updateModelDetail(s.selectedModel)
                     binding.chipGroupModels.isEnabled = !busy
+
+                    binding.tvLog.text = s.log.takeLast(14).joinToString("\n")
 
                     s.gpuInfo?.let { gpu ->
                         binding.tvGpu.text = if (gpu.isAdreno && gpu.adrenoSeries != "unknown")
@@ -403,7 +327,6 @@ class MainActivity : AppCompatActivity() {
                         else "Vulkan: tidak didukung"
                     }
 
-                    // Save hasil ke gallery lokal (sekali per hasil)
                     if (s.result != null && s.statusKind == StatusKind.DONE && !s.processing) {
                         if (binding.imagePreview.tag != s.result) {
                             binding.imagePreview.tag = s.result
@@ -418,7 +341,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun refreshSystem() {
         try {
-            val stats = SystemMonitor.snapshot(this, vm.state.value.backend.label)
+            val stats = SystemMonitor.snapshot(this)
             binding.tvCpu.text = "${stats.cpuCores}c · ${stats.cpuFreqMhz}MHz"
             binding.tvRam.text = "${stats.ramUsedMb}/${stats.ramTotalMb}M"
         } catch (_: Throwable) {}
@@ -438,6 +361,44 @@ class MainActivity : AppCompatActivity() {
                 }
             } catch (e: Throwable) {
                 withContext(Dispatchers.Main) { toast("Error: ${e.message}") }
+            }
+        }
+    }
+
+    private fun saveResult() {
+        val bmp = vm.state.value.result ?: return
+        lifecycleScope.launch(Dispatchers.IO) {
+            val uri = ImageSaver.saveToGallery(
+                this@MainActivity, bmp,
+                "upscaled_${System.currentTimeMillis()}.png"
+            )
+            withContext(Dispatchers.Main) {
+                if (uri != null) Snackbar.make(binding.root,
+                    getString(R.string.saved_success), Snackbar.LENGTH_LONG).show()
+                else toast("Gagal menyimpan")
+            }
+        }
+    }
+
+    private fun shareResult() {
+        val bmp = vm.state.value.result ?: return
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val path = File(cacheDir, "share_${System.currentTimeMillis()}.png")
+                path.outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
+                val uri = FileProvider.getUriForFile(
+                    this@MainActivity, "$packageName.fileprovider", path
+                )
+                withContext(Dispatchers.Main) {
+                    val intent = Intent(Intent.ACTION_SEND).apply {
+                        type = "image/png"
+                        putExtra(Intent.EXTRA_STREAM, uri)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                    startActivity(Intent.createChooser(intent, "Bagikan"))
+                }
+            } catch (e: Throwable) {
+                withContext(Dispatchers.Main) { toast("Gagal bagikan: ${e.message}") }
             }
         }
     }

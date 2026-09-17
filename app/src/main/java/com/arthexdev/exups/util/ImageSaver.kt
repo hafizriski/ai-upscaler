@@ -21,8 +21,7 @@ object ImageSaver {
         val values = ContentValues().apply {
             put(MediaStore.Images.Media.DISPLAY_NAME, name)
             put(MediaStore.Images.Media.MIME_TYPE, "image/png")
-            put(MediaStore.Images.Media.RELATIVE_PATH,
-                Environment.DIRECTORY_PICTURES + "/AIUpscaler")
+            put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/ExUpscaler")
             put(MediaStore.Images.Media.IS_PENDING, 1)
         }
         val resolver = context.contentResolver
@@ -34,8 +33,8 @@ object ImageSaver {
     }
 
     private fun saveLegacy(context: Context, bitmap: Bitmap, name: String): Uri? {
-        val picturesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
-        val appDir = File(picturesDir, "AIUpscaler")
+        val dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
+        val appDir = File(dir, "ExUpscaler")
         if (!appDir.exists()) appDir.mkdirs()
         val file = File(appDir, name)
         FileOutputStream(file).use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }

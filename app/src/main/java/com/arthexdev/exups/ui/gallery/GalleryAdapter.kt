@@ -39,7 +39,6 @@ class GalleryAdapter(
     override fun onBindViewHolder(holder: VH, position: Int) {
         val item = items[position]
         holder.date.text = dateFormat.format(Date(item.timestamp))
-
         holder.img.setImageBitmap(null)
         scope.launch {
             val bmp = withContext(Dispatchers.IO) {
@@ -50,7 +49,6 @@ class GalleryAdapter(
                 holder.img.setImageBitmap(bmp)
             }
         }
-
         holder.itemView.setOnClickListener { onItemClick(item) }
     }
 

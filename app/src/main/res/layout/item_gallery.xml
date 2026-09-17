@@ -8,18 +8,15 @@
     app:cardBackgroundColor="@color/ios_bg_elevated"
     app:cardCornerRadius="@dimen/r_md"
     app:cardElevation="0dp">
-
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="160dp">
-
         <ImageView
             android:id="@+id/ivGalleryItem"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:contentDescription="Gallery item"
             android:scaleType="centerCrop"/>
-
         <TextView
             android:id="@+id/tvGalleryDate"
             style="@style/IOS_Caption2"

@@ -15,7 +15,9 @@ import com.arthexdev.exups.ml.engine.Backend
 import com.arthexdev.exups.ml.engine.ModelDownloader
 import com.arthexdev.exups.ml.engine.ModelRegistry
 import com.arthexdev.exups.ml.engine.ModelSpec
+import com.arthexdev.exups.service.UpscaleNotificationService
 import com.arthexdev.exups.util.GpuDetector
+import com.arthexdev.exups.util.NotificationHelper
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,7 +32,7 @@ data class MainUiState(
     val source: Bitmap? = null,
     val result: Bitmap? = null,
     val backend: Backend = Backend.CPU,
-    val threadCount: Int = 4,
+    val threadCount: Int = 8,
     val maxThreads: Int = 8,
     val gpuInfo: GpuDetector.GpuInfo? = null,
     val allModels: List<ModelSpec> = emptyList(),
@@ -44,8 +46,7 @@ data class MainUiState(
     val log: List<String> = emptyList(),
     val processing: Boolean = false,
     val downloading: Boolean = false,
-    val canCancel: Boolean = false,
-    val modelAvailable: Boolean = true
+    val canCancel: Boolean = false
 ) {
     val selectedModel: ModelSpec?
         get() = allModels.firstOrNull { it.id == selectedModelId }
@@ -55,8 +56,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     private val useCase: UpscaleImageUseCase
     private val gpuInfo: GpuDetector.GpuInfo
-    private val recommendedThreads: Int
-    private val maxCores: Int
     private var processingJob: Job? = null
     private var downloadJob: Job? = null
 
@@ -64,20 +63,18 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         ServiceLocator.init(app)
         useCase = ServiceLocator.provideUpscaleUseCase()
         gpuInfo = GpuDetector.detect()
-        recommendedThreads = GpuDetector.recommendedCpuThreads()
-        maxCores = Runtime.getRuntime().availableProcessors().coerceAtLeast(1)
+        NotificationHelper.createChannels(app)
     }
 
     private val _state = MutableStateFlow(
         MainUiState(
             gpuInfo = gpuInfo,
-            maxThreads = maxCores,
-            threadCount = recommendedThreads,
+            maxThreads = Runtime.getRuntime().availableProcessors().coerceAtLeast(1),
+            threadCount = 8,
             log = listOf(
                 "GPU: ${gpuInfo.renderer}",
-                "Adreno: ${gpuInfo.adrenoSeries}",
-                "Vulkan: ${if (gpuInfo.supportsVulkan) "OK API ${gpuInfo.vulkanApiLevel}" else "tidak didukung"}",
-                "CPU threads: $recommendedThreads"
+                "Vulkan: ${if (gpuInfo.supportsVulkan) "OK" else "tidak"}",
+                "CPU threads: 8"
             )
         )
     )
@@ -90,8 +87,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             it.copy(
                 allModels = all,
                 selectedModelId = default.id,
-                selectedReady = ModelRegistry.isReady(getApplication(), default),
-                modelAvailable = true
+                selectedReady = ModelRegistry.isReady(getApplication(), default)
             )
         }
     }
@@ -99,20 +95,15 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun setSource(bitmap: Bitmap) {
         _state.update {
             it.copy(
-                source = bitmap,
-                result = null,
-                statusText = "Siap",
-                statusKind = StatusKind.IDLE,
-                progressPercent = 0,
-                progressText = "Menunggu…",
+                source = bitmap, result = null,
+                statusText = "Siap", statusKind = StatusKind.IDLE,
+                progressPercent = 0, progressText = "Menunggu…",
                 info = "Sumber: ${bitmap.width}×${bitmap.height}"
             )
         }
     }
 
-    fun setBackend(backend: Backend) {
-        _state.update { it.copy(backend = backend) }
-    }
+    fun setBackend(backend: Backend) { _state.update { it.copy(backend = backend) } }
 
     fun setThreadCount(count: Int) {
         _state.update { it.copy(threadCount = count.coerceIn(1, it.maxThreads)) }
@@ -121,13 +112,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun setModel(modelId: String) {
         if (_state.value.processing || _state.value.downloading) return
         val spec = ModelRegistry.getById(modelId)
-        val ready = ModelRegistry.isReady(getApplication(), spec)
         _state.update {
             it.copy(
                 selectedModelId = modelId,
-                selectedReady = ready,
-                log = (it.log + "Model: ${spec.displayName} ${if (ready) "[OK]" else "[belum]"}")
-                    .takeLast(40)
+                selectedReady = ModelRegistry.isReady(getApplication(), spec),
+                log = (it.log + "Model: ${spec.displayName}").takeLast(40)
             )
         }
     }
@@ -135,15 +124,15 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun cancel() {
         processingJob?.cancel()
         downloadJob?.cancel()
+        NotificationHelper.cancelUpscale(getApplication())
+        NotificationHelper.cancelDownload(getApplication())
+        try { UpscaleNotificationService.stop(getApplication()) } catch (_: Throwable) {}
+
         _state.update {
             it.copy(
-                processing = false,
-                downloading = false,
-                canCancel = false,
-                statusText = "Dibatalkan",
-                statusKind = StatusKind.CANCELLED,
-                progressText = "Dibatalkan oleh pengguna",
-                log = (it.log + "X Dibatalkan").takeLast(40),
+                processing = false, downloading = false, canCancel = false,
+                statusText = "Dibatalkan", statusKind = StatusKind.CANCELLED,
+                progressText = "Dibatalkan",
                 progressPercent = 0
             )
         }
@@ -155,27 +144,22 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         val src = s.source ?: return
         if (src.width <= 0) return
 
-        if (ModelRegistry.isReady(getApplication(), spec)) {
-            upscale()
-        } else {
-            downloadThenUpscale(spec)
-        }
+        if (ModelRegistry.isReady(getApplication(), spec)) upscale()
+        else downloadThenUpscale(spec)
     }
 
     private fun downloadThenUpscale(spec: ModelSpec) {
         if (_state.value.downloading) return
-
         _state.update {
             it.copy(
-                downloading = true,
-                canCancel = true,
+                downloading = true, canCancel = true,
                 statusText = "Mengunduh model…",
                 statusKind = StatusKind.DOWNLOADING,
                 progressPercent = 0,
-                progressText = "0 MB / ${spec.approxSizeMb} MB",
-                log = (it.log + "Download ${spec.displayName}").takeLast(40)
+                progressText = "0 MB / ${spec.approxSizeMb} MB"
             )
         }
+        NotificationHelper.showDownloadProgress(getApplication(), 0, 0, spec.approxSizeMb.toLong())
 
         downloadJob = viewModelScope.launch {
             val success = ModelDownloader.download(
@@ -192,33 +176,23 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                             progressText = "$mbDone MB / $mbTotal MB (${percent}%)"
                         )
                     }
+                    NotificationHelper.showDownloadProgress(getApplication(), percent, mbDone, mbTotal)
                 },
                 onLog = { msg ->
-                    _state.update { st ->
-                        st.copy(log = (st.log + msg).takeLast(40))
-                    }
+                    _state.update { st -> st.copy(log = (st.log + msg).takeLast(40)) }
                 }
             )
+            NotificationHelper.cancelDownload(getApplication())
 
             if (success) {
-                _state.update {
-                    it.copy(
-                        downloading = false,
-                        canCancel = false,
-                        selectedReady = true,
-                        log = (it.log + "OK Download selesai").takeLast(40)
-                    )
-                }
+                _state.update { it.copy(downloading = false, canCancel = false, selectedReady = true) }
                 upscale()
             } else {
                 _state.update {
                     it.copy(
-                        downloading = false,
-                        canCancel = false,
-                        statusText = "Download gagal",
-                        statusKind = StatusKind.ERROR,
-                        progressText = "Periksa koneksi internet",
-                        log = (it.log + "X Download gagal").takeLast(40)
+                        downloading = false, canCancel = false,
+                        statusText = "Download gagal", statusKind = StatusKind.ERROR,
+                        progressText = "Periksa koneksi internet"
                     )
                 }
             }
@@ -232,15 +206,16 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
         _state.update {
             it.copy(
-                processing = true,
-                canCancel = true,
-                statusText = "Memproses…",
-                statusKind = StatusKind.RUNNING,
-                progressPercent = 0,
-                progressText = "Memulai…",
-                log = it.log + "-- Mulai --"
+                processing = true, canCancel = true,
+                statusText = "Memproses…", statusKind = StatusKind.RUNNING,
+                progressPercent = 0, progressText = "Memulai…"
             )
         }
+
+        try {
+            UpscaleNotificationService.start(getApplication())
+            NotificationHelper.showUpscaleProgress(getApplication(), 0, "Menyiapkan…")
+        } catch (_: Throwable) {}
 
         processingJob = viewModelScope.launch {
             val result = try {
@@ -249,47 +224,52 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         is ProgressEvent.Log -> _state.update { st ->
                             st.copy(log = (st.log + event.message).takeLast(40))
                         }
+                        is ProgressEvent.Stage -> {
+                            _state.update { st ->
+                                st.copy(statusText = event.phase,
+                                    progressText = event.detail.ifEmpty { event.phase })
+                            }
+                            NotificationHelper.showUpscaleProgress(getApplication(), 0, event.phase)
+                        }
+                        is ProgressEvent.TileProgress -> {
+                            val pct = if (event.total > 0)
+                                ((event.current.toFloat() / event.total) * 100f).toInt().coerceIn(0, 100)
+                            else 0
+                            _state.update { st ->
+                                st.copy(
+                                    statusText = "Proses tile",
+                                    progressPercent = pct,
+                                    progressText = "Tile ${event.current.coerceAtMost(event.total)}/${event.total} · ${event.msPerTile}ms/tile"
+                                )
+                            }
+                            NotificationHelper.showUpscaleProgress(
+                                getApplication(), pct, "Tile ${event.current}/${event.total}"
+                            )
+                        }
                         is ProgressEvent.Warning -> _state.update { st ->
                             st.copy(log = (st.log + "! ${event.message}").takeLast(40))
                         }
                         is ProgressEvent.Error -> _state.update { st ->
                             st.copy(log = (st.log + "X ${event.message}").takeLast(40))
                         }
-                        is ProgressEvent.Stage -> _state.update { st ->
-                            st.copy(
-                                statusText = event.phase,
-                                progressText = event.detail.ifEmpty { event.phase }
-                            )
-                        }
-                        is ProgressEvent.TileProgress -> _state.update { st ->
-                            val pct = if (event.total > 0)
-                                ((event.current.toFloat() / event.total) * 100f).toInt()
-                                    .coerceIn(0, 100)
-                            else 0
-                            st.copy(
-                                statusText = "Proses tile",
-                                progressPercent = pct,
-                                progressText = "Tile ${event.current.coerceAtMost(event.total)}/${event.total} · ${event.msPerTile}ms/tile"
-                            )
-                        }
                         is ProgressEvent.Complete -> handleComplete(event.result)
                     }
                 }
             } catch (e: CancellationException) {
+                NotificationHelper.cancelUpscale(getApplication())
+                try { UpscaleNotificationService.stop(getApplication()) } catch (_: Throwable) {}
                 null
             } catch (e: Throwable) {
+                try { UpscaleNotificationService.stop(getApplication()) } catch (_: Throwable) {}
                 AppResult.Failure(AppError.fromThrowable(e))
             }
 
             if (result is AppResult.Failure) {
                 _state.update {
                     it.copy(
-                        processing = false,
-                        canCancel = false,
-                        statusText = "Gagal",
-                        statusKind = StatusKind.ERROR,
-                        progressText = result.error.userMessage,
-                        log = (it.log + "ERROR: ${result.error.techMessage}").takeLast(40)
+                        processing = false, canCancel = false,
+                        statusText = "Gagal", statusKind = StatusKind.ERROR,
+                        progressText = result.error.userMessage
                     )
                 }
             }
@@ -299,15 +279,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private fun handleComplete(r: UpscaleResult) {
         _state.update {
             it.copy(
-                result = r.bitmap,
-                processing = false,
-                canCancel = false,
+                result = r.bitmap, processing = false, canCancel = false,
                 statusText = if (r.usedFallback) "Selesai (fallback)" else "Selesai",
-                statusKind = StatusKind.DONE,
-                progressPercent = 100,
+                statusKind = StatusKind.DONE, progressPercent = 100,
                 progressText = "Selesai · ${r.bitmap.width}×${r.bitmap.height} · ${r.elapsedMs / 1000}s",
                 info = "Hasil: ${r.bitmap.width}×${r.bitmap.height}"
             )
         }
+        NotificationHelper.showUpscaleDone(getApplication(), r.bitmap.width, r.bitmap.height)
+        try { UpscaleNotificationService.stop(getApplication()) } catch (_: Throwable) {}
     }
 }
