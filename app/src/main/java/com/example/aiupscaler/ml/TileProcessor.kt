@@ -25,7 +25,8 @@ class TileProcessor(private val engine: AdaptiveInterpreter) {
         data class Failure(val message: String) : ProcessOutcome()
     }
 
-    fun process(src: Bitmap, emit: (ProgressEvent) -> Unit): ProcessOutcome {
+    // JADIKAN SUSPEND supaya coroutineContext bisa dipanggil
+    suspend fun process(src: Bitmap, emit: (ProgressEvent) -> Unit): ProcessOutcome {
         val argb = src.copy(Bitmap.Config.ARGB_8888, false)
         val w = argb.width; val h = argb.height
         if (w <= 0 || h <= 0) return ProcessOutcome.Failure("Gambar kosong")
@@ -55,7 +56,7 @@ class TileProcessor(private val engine: AdaptiveInterpreter) {
         outer@ for (y in yPositions) {
             for (x in xPositions) {
                 if (done >= total) break@outer
-                coroutineContext.ensureActive()
+                coroutineContext.ensureActive()  // ← sekarang valid karena suspend
 
                 val cw = minOf(tile, w - x); val ch = minOf(tile, h - y)
                 val tileStart = System.currentTimeMillis()

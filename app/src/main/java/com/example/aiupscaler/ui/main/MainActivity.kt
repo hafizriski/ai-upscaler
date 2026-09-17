@@ -118,7 +118,7 @@ class MainActivity : AppCompatActivity() {
                 text = spec.displayName
                 isCheckable = true
                 isChecked = spec.id == selectedId
-                chipIconVisible = false
+                isChipIconVisible = false
                 textSize = 11f
                 setOnClickListener { vm.setModel(spec.id) }
             }
