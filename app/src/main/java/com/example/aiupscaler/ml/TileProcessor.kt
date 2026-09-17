@@ -8,15 +8,19 @@ import java.nio.ByteOrder
 
 class TileProcessor(private val interp: UpscalerInterpreter) {
     private val tile = interp.inputSize
-    private val scale = interp.scale
+    private val scale = interp.scale.coerceAtLeast(1)
     private val overlap = 8
-    private val stride = tile - overlap
+    private val stride = (tile - overlap).coerceAtLeast(1)
 
     fun process(src: Bitmap): Bitmap {
         val srcArgb = src.copy(Bitmap.Config.ARGB_8888, false)
         val w = srcArgb.width
         val h = srcArgb.height
-        val output = Bitmap.createBitmap(w * scale, h * scale, Bitmap.Config.ARGB_8888)
+        if (w == 0 || h == 0) throw IllegalStateException("Gambar kosong")
+
+        val outW = w * scale
+        val outH = h * scale
+        val output = Bitmap.createBitmap(outW, outH, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(output)
         val paint = Paint(Paint.FILTER_BITMAP_FLAG)
 
@@ -31,6 +35,7 @@ class TileProcessor(private val interp: UpscalerInterpreter) {
                 val tileBmp = toBitmap(out[0], tile * scale)
                 val crop = Bitmap.createBitmap(tileBmp, 0, 0, cw * scale, ch * scale)
                 canvas.drawBitmap(crop, (x * scale).toFloat(), (y * scale).toFloat(), paint)
+
                 x += stride
                 if (x + tile > w) x = maxOf(0, w - tile)
                 if (x >= w) break
@@ -44,7 +49,8 @@ class TileProcessor(private val interp: UpscalerInterpreter) {
 
     private fun extractPadded(src: Bitmap, x: Int, y: Int, cw: Int, ch: Int, size: Int): Bitmap {
         val bmp = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
-        Canvas(bmp).drawBitmap(Bitmap.createBitmap(src, x, y, cw, ch), 0f, 0f, null)
+        val patch = Bitmap.createBitmap(src, x, y, cw, ch)
+        Canvas(bmp).drawBitmap(patch, 0f, 0f, null)
         return bmp
     }
 

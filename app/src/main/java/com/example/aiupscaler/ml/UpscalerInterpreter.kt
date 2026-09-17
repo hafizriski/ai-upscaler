@@ -24,8 +24,12 @@ class UpscalerInterpreter(
         interpreter = Interpreter(loadModel(context, modelAsset), opts)
         val inShape = interpreter.getInputTensor(0).shape()
         val outShape = interpreter.getOutputTensor(0).shape()
+        // Real-ESRGAN x4v3: [1,128,128,3] -> [1,512,512,3] NHWC
         inH = inShape[1]; inW = inShape[2]
         outH = outShape[1]; outW = outShape[2]
+        if (inH == 0 || inW == 0 || outH == 0 || outW == 0) {
+            throw IllegalStateException("Model tidak valid: dimensi 0")
+        }
     }
 
     val inputSize: Int get() = inH
@@ -37,7 +41,9 @@ class UpscalerInterpreter(
         return out
     }
 
-    override fun close() = interpreter.close()
+    override fun close() {
+        try { interpreter.close() } catch (_: Throwable) {}
+    }
 
     private fun loadModel(context: Context, name: String): ByteBuffer {
         context.assets.openFd(name).use { fd ->

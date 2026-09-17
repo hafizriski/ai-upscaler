@@ -8,5 +8,6 @@
     <color name="md_surface_variant">#49454F</color>
     <color name="md_on_surface">#E6E1E5</color>
     <color name="md_on_surface_variant">#CAC4D0</color>
-    <color name="md_background">#121212</color>
+    <color name="md_background">#0F0D13</color>
+    <color name="md_outline">#49454F</color>
 </resources>

@@ -10,6 +10,7 @@
         <item name="colorSurfaceVariant">@color/md_surface_variant</item>
         <item name="colorOnSurface">@color/md_on_surface</item>
         <item name="colorOnSurfaceVariant">@color/md_on_surface_variant</item>
+        <item name="colorOutline">@color/md_outline</item>
         <item name="android:statusBarColor">@color/md_surface</item>
     </style>
 </resources>

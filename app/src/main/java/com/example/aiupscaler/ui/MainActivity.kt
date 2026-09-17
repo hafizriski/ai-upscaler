@@ -27,6 +27,8 @@ class MainActivity : AppCompatActivity() {
     private var resultBitmap: Bitmap? = null
     private var backend: Backend = Backend.CPU
 
+    private val MODEL = "models/realesr_general_x4v3.tflite"
+
     private val pick = registerForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri -> uri?.let { loadImage(it) } }
@@ -49,40 +51,66 @@ class MainActivity : AppCompatActivity() {
 
     private fun loadImage(uri: Uri) {
         lifecycleScope.launch(Dispatchers.IO) {
-            val stream = contentResolver.openInputStream(uri) ?: return@launch
-            val bmp = BitmapFactory.decodeStream(stream)
-            stream.close()
-            withContext(Dispatchers.Main) {
-                sourceBitmap = bmp; resultBitmap = null
-                binding.imagePreview.setImageBitmap(bmp)
-                binding.btnUpscale.isEnabled = true; binding.btnSave.isEnabled = false
-                binding.tvInfo.text = getString(com.example.aiupscaler.R.string.info_source, bmp.width, bmp.height)
+            try {
+                val stream = contentResolver.openInputStream(uri) ?: return@launch
+                val bmp = BitmapFactory.decodeStream(stream)
+                stream.close()
+                if (bmp == null) {
+                    withContext(Dispatchers.Main) { toast("Gagal memuat gambar") }
+                    return@launch
+                }
+                withContext(Dispatchers.Main) {
+                    sourceBitmap = bmp
+                    resultBitmap = null
+                    binding.imagePreview.setImageBitmap(bmp)
+                    binding.btnUpscale.isEnabled = true
+                    binding.btnSave.isEnabled = false
+                    binding.tvInfo.text = getString(
+                        com.example.aiupscaler.R.string.info_source, bmp.width, bmp.height
+                    )
+                }
+            } catch (e: Throwable) {
+                withContext(Dispatchers.Main) { toast("Error: ${e.message}") }
             }
         }
     }
 
     private fun runUpscale(src: Bitmap) {
+        val modelExists = try {
+            assets.openFd(MODEL).use { true }
+        } catch (e: Exception) { false }
+
+        if (!modelExists) {
+            Snackbar.make(binding.root, "Model AI belum tersedia di APK", Snackbar.LENGTH_LONG).show()
+            return
+        }
+
         binding.linearProgress.visibility = View.VISIBLE
-        binding.btnUpscale.isEnabled = false; binding.btnPick.isEnabled = false
+        binding.btnUpscale.isEnabled = false
+        binding.btnPick.isEnabled = false
         binding.tvInfo.text = getString(com.example.aiupscaler.R.string.info_processing)
 
         lifecycleScope.launch(Dispatchers.Default) {
             try {
-                val engine = UpscalerInterpreter(this@MainActivity, "models/realesr_general_x4v3.tflite", backend)
+                val engine = UpscalerInterpreter(this@MainActivity, MODEL, backend)
                 val out = try { TileProcessor(engine).process(src) } finally { engine.close() }
                 withContext(Dispatchers.Main) {
                     resultBitmap = out
                     binding.imagePreview.setImageBitmap(out)
                     binding.linearProgress.visibility = View.INVISIBLE
-                    binding.btnUpscale.isEnabled = true; binding.btnPick.isEnabled = true
+                    binding.btnUpscale.isEnabled = true
+                    binding.btnPick.isEnabled = true
                     binding.btnSave.isEnabled = true
-                    binding.tvInfo.text = getString(com.example.aiupscaler.R.string.info_result, out.width, out.height)
+                    binding.tvInfo.text = getString(
+                        com.example.aiupscaler.R.string.info_result, out.width, out.height
+                    )
                 }
             } catch (e: Throwable) {
                 withContext(Dispatchers.Main) {
                     binding.linearProgress.visibility = View.INVISIBLE
-                    binding.btnUpscale.isEnabled = true; binding.btnPick.isEnabled = true
-                    Snackbar.make(binding.root, getString(com.example.aiupscaler.R.string.error_process, e.message ?: "unknown"), Snackbar.LENGTH_LONG).show()
+                    binding.btnUpscale.isEnabled = true
+                    binding.btnPick.isEnabled = true
+                    Snackbar.make(binding.root, "Gagal: ${e.message ?: "unknown"}", Snackbar.LENGTH_LONG).show()
                 }
             }
         }
@@ -91,15 +119,21 @@ class MainActivity : AppCompatActivity() {
     private fun save() {
         val bmp = resultBitmap ?: return
         lifecycleScope.launch(Dispatchers.IO) {
-            val values = ContentValues().apply {
-                put(MediaStore.Images.Media.DISPLAY_NAME, "upscaled_${System.currentTimeMillis()}.png")
-                put(MediaStore.Images.Media.MIME_TYPE, "image/png")
-                put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/AIUpscaler")
-            }
-            val uri = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
-            uri?.let {
-                contentResolver.openOutputStream(it)?.use { os -> bmp.compress(Bitmap.CompressFormat.PNG, 100, os) }
-                withContext(Dispatchers.Main) { toast(getString(com.example.aiupscaler.R.string.saved_ok)) }
+            try {
+                val values = ContentValues().apply {
+                    put(MediaStore.Images.Media.DISPLAY_NAME, "upscaled_${System.currentTimeMillis()}.png")
+                    put(MediaStore.Images.Media.MIME_TYPE, "image/png")
+                    put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/AIUpscaler")
+                }
+                val uri = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+                uri?.let {
+                    contentResolver.openOutputStream(it)?.use { os ->
+                        bmp.compress(Bitmap.CompressFormat.PNG, 100, os)
+                    }
+                    withContext(Dispatchers.Main) { toast(getString(com.example.aiupscaler.R.string.saved_ok)) }
+                }
+            } catch (e: Throwable) {
+                withContext(Dispatchers.Main) { toast("Gagal simpan: ${e.message}") }
             }
         }
     }
