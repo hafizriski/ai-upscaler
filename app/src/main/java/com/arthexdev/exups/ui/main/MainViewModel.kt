@@ -170,7 +170,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 context = getApplication(),
                 url = spec.remoteUrl,
                 fileName = spec.fileName,
-                expectedSize = spec.approxSizeMb * 1024L * 1024L
+                expectedSize = spec.approxSizeMb * 1024L * 1024L,
             ) { downloaded, total, percent ->
                 val mbDone = downloaded / 1024 / 1024
                 val mbTotal = if (total > 0) total / 1024 / 1024 else spec.approxSizeMb.toLong()

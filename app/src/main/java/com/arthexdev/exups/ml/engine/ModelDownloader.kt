@@ -2,6 +2,7 @@ package com.arthexdev.exups.ml.engine
 
 import android.content.Context
 import com.arthexdev.exups.core.telemetry.Telemetry
+import com.arthexdev.exups.util.NetworkUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -13,6 +14,7 @@ object ModelDownloader {
 
     private const val TAG = "ModelDownloader"
     private const val BUFFER_SIZE = 8192
+    private const val TIMEOUT_MS = 60000
 
     fun getModelDir(context: Context): File {
         val dir = File(context.filesDir, "models")
@@ -42,61 +44,100 @@ object ModelDownloader {
         url: String,
         fileName: String,
         expectedSize: Long = 0,
-        onProgress: (downloaded: Long, total: Long, percent: Int) -> Unit = { _, _, _ -> }
+        onProgress: (downloaded: Long, total: Long, percent: Int) -> Unit = { _, _, _ -> },
+        onLog: (String) -> Unit = {}
     ): Boolean = withContext(Dispatchers.IO) {
+
+        if (!NetworkUtils.isOnline(context)) {
+            onLog("❌ Tidak ada koneksi internet")
+            onLog("   Cek WiFi / data seluler Anda")
+            return@withContext false
+        }
 
         val target = getLocalPath(context, fileName)
         val temp = File(target.parentFile, "$fileName.part")
 
         if (isDownloaded(context, fileName, expectedSize)) {
-            Telemetry.info(TAG, "Model sudah ada: $fileName")
+            onLog("✓ Model sudah ada di storage")
             return@withContext true
         }
 
+        onLog("→ Memulai download…")
+        onLog("Koneksi: ${NetworkUtils.describe(context)}")
+        onLog("URL: ${url.take(80)}…")
+
+        var conn: HttpURLConnection? = null
+
         try {
             val startAt = if (temp.exists()) temp.length() else 0L
+            if (startAt > 0) onLog("Resume dari: ${startAt / 1024 / 1024} MB")
 
-            var urlObj = URL(url)
-            var conn: HttpURLConnection
+            var currentUrl = url
             var redirects = 0
+            val maxRedirects = 8
+            var responseCode = 0
 
-            // Follow redirect (GitHub releases → S3)
-            while (true) {
-                conn = (urlObj.openConnection() as HttpURLConnection).apply {
-                    connectTimeout = 30000
-                    readTimeout = 30000
-                    instanceFollowRedirects = false
-                    if (startAt > 0) setRequestProperty("Range", "bytes=$startAt-")
+            while (redirects < maxRedirects) {
+                val urlObj = URL(currentUrl)
+                val c = urlObj.openConnection() as HttpURLConnection
+                c.connectTimeout = TIMEOUT_MS
+                c.readTimeout = TIMEOUT_MS
+                c.instanceFollowRedirects = false
+                c.setRequestProperty("User-Agent", "ExUpscaler/1.0")
+                c.setRequestProperty("Accept", "*/*")
+                if (startAt > 0) c.setRequestProperty("Range", "bytes=$startAt-")
+
+                responseCode = try {
+                    c.responseCode
+                } catch (e: Throwable) {
+                    onLog("❌ Gagal connect: ${e.javaClass.simpleName}")
+                    onLog("   ${e.message?.take(100)}")
+                    return@withContext false
                 }
 
-                val code = conn.responseCode
-                if (code in 300..399) {
-                    val newUrl = conn.getHeaderField("Location")
-                    conn.disconnect()
-                    if (newUrl == null || redirects >= 5) {
-                        Telemetry.error(TAG, "Terlalu banyak redirect")
+                onLog("HTTP $responseCode ← ${urlObj.host}")
+
+                if (responseCode in 300..399) {
+                    val newUrl = c.getHeaderField("Location")
+                    c.disconnect()
+                    if (newUrl.isNullOrBlank()) {
+                        onLog("❌ Redirect tanpa Location")
                         return@withContext false
                     }
-                    urlObj = URL(newUrl)
+                    currentUrl = newUrl
                     redirects++
-                } else break
+                } else {
+                    conn = c
+                    break
+                }
             }
 
-            val responseCode = conn.responseCode
+            if (conn == null) {
+                onLog("❌ Terlalu banyak redirect")
+                return@withContext false
+            }
+
+            if (responseCode !in listOf(200, 206)) {
+                onLog("❌ HTTP $responseCode")
+                when (responseCode) {
+                    404 -> onLog("   File tidak ditemukan")
+                    403 -> onLog("   Akses ditolak")
+                    500, 502, 503 -> onLog("   Server error")
+                }
+                conn.disconnect()
+                return@withContext false
+            }
+
             val contentLength = conn.contentLengthLong
             val totalSize = when {
                 responseCode == HttpURLConnection.HTTP_PARTIAL -> {
-                    val contentRange = conn.getHeaderField("Content-Range") ?: ""
-                    contentRange.substringAfter("/").toLongOrNull()
-                        ?: (startAt + contentLength)
+                    val cr = conn.getHeaderField("Content-Range") ?: ""
+                    cr.substringAfter("/").toLongOrNull() ?: (startAt + contentLength)
                 }
                 else -> contentLength.takeIf { it > 0 } ?: expectedSize
             }
 
-            if (responseCode !in listOf(200, 206)) {
-                Telemetry.error(TAG, "HTTP $responseCode")
-                return@withContext false
-            }
+            onLog("Total size: ${totalSize / 1024 / 1024} MB")
 
             val appendMode = responseCode == HttpURLConnection.HTTP_PARTIAL && startAt > 0
             var downloaded = if (appendMode) startAt else 0L
@@ -130,12 +171,17 @@ object ModelDownloader {
                 temp.delete()
             }
 
-            Telemetry.info(TAG, "Download OK: $fileName (${target.length() / 1024 / 1024} MB)")
-            onProgress(target.length(), target.length(), 100)
-            true
+            val finalSize = target.length()
+            onLog("✓ Download selesai: ${finalSize / 1024 / 1024} MB")
+            onProgress(finalSize, finalSize, 100)
+            return@withContext true
+
         } catch (e: Throwable) {
+            onLog("❌ Exception: ${e.javaClass.simpleName}")
+            onLog("   ${e.message?.take(100)}")
             Telemetry.error(TAG, "Download gagal: ${e.message}")
-            false
+            try { conn?.disconnect() } catch (_: Throwable) {}
+            return@withContext false
         }
     }
 }
