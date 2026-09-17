@@ -45,10 +45,25 @@ class TileProcessor(private val interp: UpscalerInterpreter) {
                 lastTileStart = System.currentTimeMillis()
                 listener?.onLog("Tile #${done + 1}/$total @ ($x,$y) ${cw}×$ch")
 
-                val padded = extract(argb, x, y, cw, ch, tile)
-                val out = interp.run(makeInput(padded))
-                val tileBmp = toBitmap(out, tile * scale)
-                val crop = Bitmap.createBitmap(tileBmp, 0, 0, cw * scale, ch * scale)
+                // Coba AI dulu, kalau gagal → bilinear
+                val upscaledTile: Bitmap = try {
+                    val padded = extract(argb, x, y, cw, ch, tile)
+                    val out = interp.run(makeInput(padded))
+                    toBitmap(out, tile * scale)
+                } catch (e: Throwable) {
+                    listener?.onLog("  ⚠️ AI gagal: ${e.message?.take(80)}")
+                    listener?.onLog("  → Fallback bilinear untuk tile ini")
+                    val patch = Bitmap.createBitmap(argb, x, y, cw, ch)
+                    BilinearFallback.upscale(patch, scale)
+                }
+
+                // Kalau AI berhasil, tile lebih besar dari crop; kalau bilinear, tepat crop
+                val crop = if (upscaledTile.width >= cw * scale && upscaledTile.height >= ch * scale) {
+                    Bitmap.createBitmap(upscaledTile, 0, 0, cw * scale, ch * scale)
+                } else {
+                    Bitmap.createScaledBitmap(upscaledTile, cw * scale, ch * scale, true)
+                }
+
                 canvas.drawBitmap(crop, (x * scale).toFloat(), (y * scale).toFloat(), paint)
 
                 done++
@@ -95,7 +110,7 @@ class TileProcessor(private val interp: UpscalerInterpreter) {
             DataType.FLOAT32 -> floatBuf(px, nchw)
             DataType.UINT8 -> uint8Buf(px, nchw)
             DataType.INT8 -> int8Buf(px, nchw)
-            else -> throw IllegalStateException("Unsupported dtype")
+            else -> throw IllegalStateException("Unsupported dtype: ${interp.inputDataType}")
         }
     }
 

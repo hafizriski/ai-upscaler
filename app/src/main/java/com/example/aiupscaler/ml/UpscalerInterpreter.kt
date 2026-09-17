@@ -8,6 +8,10 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.channels.FileChannel
 
+/**
+ * Interpreter adaptif yang otomatis mendeteksi format model & mencoba
+ * beberapa strategi input kedua sampai berhasil.
+ */
 class UpscalerInterpreter(
     context: Context,
     modelAsset: String,
@@ -25,6 +29,13 @@ class UpscalerInterpreter(
     val inputDataType: DataType
     val hasSecondInput: Boolean
     val numInputs: Int
+    val secondInputType: DataType?
+    val secondInputShape: IntArray?
+    val secondInputElementCount: Int
+
+    // Strategi input kedua yang berhasil (index)
+    var workingStrategy: Int = -1
+        private set
 
     init {
         val opts = DelegateFactory.build(context, backend)
@@ -49,11 +60,29 @@ class UpscalerInterpreter(
         } else throw IllegalStateException("Output shape: ${outShape.toList()}")
 
         hasSecondInput = numInputs >= 2
+        if (hasSecondInput) {
+            val t2 = interpreter.getInputTensor(1)
+            secondInputType = t2.dataType()
+            secondInputShape = t2.shape()
+            secondInputElementCount = secondInputShape!!.fold(1) { a, b -> a * b }
+        } else {
+            secondInputType = null
+            secondInputShape = null
+            secondInputElementCount = 0
+        }
+
         if (inH == 0 || outH == 0) throw IllegalStateException("Invalid dims")
     }
 
     val inputSize: Int get() = inH
     val scale: Int get() = if (inH > 0) outH / inH else 1
+    val modelInfo: String
+        get() = buildString {
+            append("in=${inH}×${inW}(${inputDataType},${if (inputIsNCHW) "NCHW" else "NHWC"})")
+            append(" out=${outH}×${outW}(${if (outputIsNCHW) "NCHW" else "NHWC"})")
+            append(" inputs=$numInputs")
+            if (hasSecondInput) append(" in2=${secondInputShape?.toList()}($secondInputType)")
+        }
 
     fun run(input: ByteBuffer): Array<Array<FloatArray>> {
         val outIsFloat = interpreter.getOutputTensor(0).dataType() == DataType.FLOAT32
@@ -67,7 +96,7 @@ class UpscalerInterpreter(
             Array(1) { Array(outH) { Array(outW) { FloatArray(3) } } }
 
         val outputs = mutableMapOf<Int, Any>(0 to buf)
-        interpreter.runForMultipleInputsOutputs(buildInputs(input), outputs)
+        runWithFallback(input, outputs)
 
         @Suppress("UNCHECKED_CAST")
         return if (outputIsNCHW) {
@@ -79,35 +108,132 @@ class UpscalerInterpreter(
     private fun runQuantized(input: ByteBuffer): Array<Array<FloatArray>> {
         val buf = Array(1) { Array(outH) { Array(outW) { ByteArray(3) } } }
         val outputs = mutableMapOf<Int, Any>(0 to buf)
-        interpreter.runForMultipleInputsOutputs(buildInputs(input), outputs)
+        runWithFallback(input, outputs)
         return Array(outH) { y -> Array(outW) { x ->
             FloatArray(3) { c -> (buf[0][y][x][c].toInt() and 0xFF) / 255f }
         } }
     }
 
-    private fun buildInputs(image: ByteBuffer): Array<Any> {
-        if (!hasSecondInput) return arrayOf(image)
+    /**
+     * Coba berbagai strategi sampai berhasil. Kalau satu gagal, coba berikutnya.
+     */
+    private fun runWithFallback(input: ByteBuffer, outputs: MutableMap<Int, Any>) {
+        val strategies = buildStrategies(input)
+        var lastError: Throwable? = null
 
-        val second = interpreter.getInputTensor(1)
-        val shape = second.shape()
-        val count = shape.fold(1) { a, b -> a * b }
+        // Kalau sudah tahu strategi yang berhasil, pakai itu dulu
+        val ordered = if (workingStrategy >= 0) {
+            listOf(strategies[workingStrategy]) + strategies.filterIndexed { i, _ -> i != workingStrategy }
+        } else strategies
 
-        val buf: ByteBuffer = when (second.dataType()) {
-            DataType.FLOAT32 -> {
-                val b = ByteBuffer.allocateDirect(count * 4).order(ByteOrder.nativeOrder())
-                for (i in 0 until count) b.putFloat(1f)
-                b.rewind()
-                b
+        for ((idx, strategy) in ordered.withIndex()) {
+            try {
+                interpreter.runForMultipleInputsOutputs(strategy.inputs, outputs)
+                workingStrategy = strategies.indexOf(strategy)
+                return
+            } catch (e: Throwable) {
+                lastError = e
+                if (idx < ordered.size - 1) {
+                    // Coba strategi berikutnya, output mungkin sudah terisi
+                    // jadi tidak apa-apa, akan ditimpa
+                }
             }
-            DataType.INT32 -> {
-                val b = ByteBuffer.allocateDirect(count * 4).order(ByteOrder.nativeOrder())
-                for (i in 0 until count) b.putInt(1)
-                b.rewind()
-                b
-            }
-            else -> ByteBuffer.allocateDirect(count).order(ByteOrder.nativeOrder())
         }
-        return arrayOf(image, buf)
+        throw lastError ?: IllegalStateException("Semua strategi gagal")
+    }
+
+    private data class Strategy(val inputs: Array<Any>)
+
+    private fun buildStrategies(image: ByteBuffer): List<Strategy> {
+        if (!hasSecondInput) return listOf(Strategy(arrayOf(image)))
+
+        val strategies = mutableListOf<Strategy>()
+        val type = secondInputType ?: DataType.FLOAT32
+        val count = secondInputElementCount
+
+        // Strategi 1: [H, W] sesuai tipe model
+        if (count == 2) {
+            strategies += Strategy(arrayOf(
+                image,
+                buffer(type, count) { b ->
+                    when (type) {
+                        DataType.INT32 -> { b.putInt(inH); b.putInt(inW) }
+                        DataType.INT64 -> { b.putLong(inH.toLong()); b.putLong(inW.toLong()) }
+                        DataType.FLOAT32 -> { b.putFloat(inH.toFloat()); b.putFloat(inW.toFloat()) }
+                        else -> {}
+                    }
+                }
+            ))
+        }
+
+        // Strategi 2: isi semua elemen dengan 1
+        strategies += Strategy(arrayOf(
+            image,
+            buffer(type, count) { b ->
+                for (i in 0 until count) {
+                    when (type) {
+                        DataType.INT32 -> b.putInt(1)
+                        DataType.INT64 -> b.putLong(1L)
+                        DataType.FLOAT32 -> b.putFloat(1f)
+                        else -> {}
+                    }
+                }
+            }
+        ))
+
+        // Strategi 3: isi semua dengan 4 (scale factor x4)
+        strategies += Strategy(arrayOf(
+            image,
+            buffer(type, count) { b ->
+                for (i in 0 until count) {
+                    when (type) {
+                        DataType.INT32 -> b.putInt(4)
+                        DataType.INT64 -> b.putLong(4L)
+                        DataType.FLOAT32 -> b.putFloat(4f)
+                        else -> {}
+                    }
+                }
+            }
+        ))
+
+        // Strategi 4: isi dengan 0
+        strategies += Strategy(arrayOf(
+            image,
+            buffer(type, count) { b ->
+                for (i in 0 until count) {
+                    when (type) {
+                        DataType.INT32 -> b.putInt(0)
+                        DataType.INT64 -> b.putLong(0L)
+                        DataType.FLOAT32 -> b.putFloat(0f)
+                        else -> {}
+                    }
+                }
+            }
+        ))
+
+        // Strategi 5: isi dengan 0.5 (kalau float)
+        if (type == DataType.FLOAT32) {
+            strategies += Strategy(arrayOf(
+                image,
+                buffer(type, count) { b ->
+                    for (i in 0 until count) b.putFloat(0.5f)
+                }
+            ))
+        }
+
+        return strategies
+    }
+
+    private inline fun buffer(type: DataType, count: Int, fill: (ByteBuffer) -> Unit): ByteBuffer {
+        val sizePerElement = when (type) {
+            DataType.FLOAT32, DataType.INT32 -> 4
+            DataType.INT64 -> 8
+            else -> 1
+        }
+        val b = ByteBuffer.allocateDirect(count * sizePerElement).order(ByteOrder.nativeOrder())
+        fill(b)
+        b.rewind()
+        return b
     }
 
     override fun close() { try { interpreter.close() } catch (_: Throwable) {} }

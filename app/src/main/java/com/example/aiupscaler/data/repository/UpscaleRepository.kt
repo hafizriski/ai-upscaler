@@ -3,6 +3,7 @@ package com.example.aiupscaler.data.repository
 import android.content.Context
 import android.graphics.Bitmap
 import com.example.aiupscaler.ml.Backend
+import com.example.aiupscaler.ml.BilinearFallback
 import com.example.aiupscaler.ml.ProgressListener
 import com.example.aiupscaler.ml.TileProcessor
 import com.example.aiupscaler.ml.UpscalerInterpreter
@@ -24,12 +25,28 @@ class UpscaleRepository(private val context: Context) {
         backend: Backend,
         listener: ProgressListener?
     ): Bitmap = withContext(Dispatchers.Default) {
-        val engine = UpscalerInterpreter(context, MODEL_ASSET, backend)
+
+        val engine: UpscalerInterpreter? = try {
+            UpscalerInterpreter(context, MODEL_ASSET, backend)
+        } catch (e: Throwable) {
+            listener?.onLog("❌ Gagal load model: ${e.message}")
+            null
+        }
+
+        if (engine == null) {
+            listener?.onLog("→ Fallback bilinear (tanpa AI)")
+            return@withContext BilinearFallback.upscale(source, 4)
+        }
+
         try {
-            listener?.onLog("Interpreter OK: in=${engine.inputSize} scale=${engine.scale}")
+            listener?.onLog("Model: ${engine.modelInfo}")
             TileProcessor(engine).process(source, listener)
+        } catch (e: Throwable) {
+            listener?.onLog("❌ AI gagal total: ${e.message}")
+            listener?.onLog("→ Fallback bilinear penuh")
+            BilinearFallback.upscale(source, 4)
         } finally {
-            engine.close()
+            try { engine.close() } catch (_: Throwable) {}
         }
     }
 }
