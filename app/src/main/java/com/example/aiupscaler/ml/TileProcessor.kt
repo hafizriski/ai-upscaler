@@ -10,6 +10,8 @@ import com.example.aiupscaler.ml.engine.AdaptiveInterpreter
 import com.example.aiupscaler.ml.fallback.BilinearUpscaler
 import com.example.aiupscaler.ml.postprocess.OutputConverter
 import com.example.aiupscaler.ml.preprocess.InputBuilder
+import kotlinx.coroutines.ensureActive
+import kotlin.coroutines.coroutineContext
 
 class TileProcessor(private val engine: AdaptiveInterpreter) {
 
@@ -53,6 +55,8 @@ class TileProcessor(private val engine: AdaptiveInterpreter) {
         outer@ for (y in yPositions) {
             for (x in xPositions) {
                 if (done >= total) break@outer
+                coroutineContext.ensureActive()
+
                 val cw = minOf(tile, w - x); val ch = minOf(tile, h - y)
                 val tileStart = System.currentTimeMillis()
 
@@ -73,6 +77,8 @@ class TileProcessor(private val engine: AdaptiveInterpreter) {
                         }
                         is AppResult.Failure -> false
                     }
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    throw e
                 } catch (e: Throwable) {
                     Telemetry.warn("Tile", "tile gagal: ${e.message}")
                     false

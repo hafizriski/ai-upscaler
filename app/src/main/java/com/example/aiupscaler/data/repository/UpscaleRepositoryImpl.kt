@@ -9,19 +9,16 @@ import com.example.aiupscaler.domain.model.UpscaleResult
 import com.example.aiupscaler.domain.repository.UpscaleRepository
 import com.example.aiupscaler.ml.TileProcessor
 import com.example.aiupscaler.ml.engine.AdaptiveInterpreter
+import com.example.aiupscaler.ml.engine.ModelRegistry
 import com.example.aiupscaler.ml.fallback.BilinearUpscaler
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
+import kotlin.coroutines.coroutineContext
 
 class UpscaleRepositoryImpl(private val context: Context) : UpscaleRepository {
 
-    companion object {
-        const val MODEL_ASSET = "models/realesr_general_x4v3.tflite"
-    }
-
-    override fun isModelAvailable(): Boolean = try {
-        context.assets.openFd(MODEL_ASSET).use { true }
-    } catch (_: Throwable) { false }
+    override fun isModelAvailable(): Boolean = ModelRegistry.hasAny(context)
 
     override suspend fun upscale(
         request: UpscaleRequest,
@@ -29,12 +26,17 @@ class UpscaleRepositoryImpl(private val context: Context) : UpscaleRepository {
     ): AppResult<UpscaleResult> = withContext(Dispatchers.Default) {
 
         val startTime = System.currentTimeMillis()
-        emit(ProgressEvent.Log("Memuat model (threads=${request.threadCount})..."))
+        val spec = ModelRegistry.getById(request.modelId)
 
-        val loadResult = AdaptiveInterpreter.load(context, MODEL_ASSET, request.backend, request.threadCount)
+        emit(ProgressEvent.Log("Model: ${spec.displayName} (${spec.approxSizeMb}MB)"))
+        emit(ProgressEvent.Log("Memuat interpreter…"))
+
+        coroutineContext.ensureActive()
+
+        val loadResult = AdaptiveInterpreter.load(context, spec.assetName, request.backend, request.threadCount)
         when (loadResult) {
             is AppResult.Failure -> {
-                emit(ProgressEvent.Warning("AI tidak tersedia, fallback bilinear"))
+                emit(ProgressEvent.Warning("Model ${spec.displayName} gagal, fallback bilinear"))
                 return@withContext fallback(request, startTime, emit)
             }
             is AppResult.Success -> {

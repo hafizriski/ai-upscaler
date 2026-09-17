@@ -19,9 +19,11 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.example.aiupscaler.R
 import com.example.aiupscaler.databinding.ActivityMainBinding
 import com.example.aiupscaler.ml.engine.Backend
+import com.example.aiupscaler.ml.engine.ModelSpec
 import com.example.aiupscaler.util.ImageSaver
 import com.example.aiupscaler.util.PermissionHelper
 import com.example.aiupscaler.util.SystemMonitor
+import com.google.android.material.chip.Chip
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -33,6 +35,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private val vm: MainViewModel by viewModels()
     private val ui = Handler(Looper.getMainLooper())
+    private val chipModelMap = mutableMapOf<String, Chip>()
 
     private val pick = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         uri?.let { loadUri(it) }
@@ -77,6 +80,10 @@ class MainActivity : AppCompatActivity() {
         }
         binding.btnSave.setOnClickListener { saveResult() }
         binding.btnShare.setOnClickListener { shareResult() }
+        binding.btnCancel.setOnClickListener {
+            vm.cancel()
+            toast("Proses dibatalkan")
+        }
 
         binding.toggleBackend.addOnButtonCheckedListener { _, id, checked ->
             if (checked) vm.setBackend(if (id == binding.btnGpu.id) Backend.GPU else Backend.CPU)
@@ -103,6 +110,39 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun buildModelChips(models: List<ModelSpec>, selectedId: String) {
+        binding.chipGroupModels.removeAllViews()
+        chipModelMap.clear()
+        models.forEach { spec ->
+            val chip = Chip(this).apply {
+                text = spec.displayName
+                isCheckable = true
+                isChecked = spec.id == selectedId
+                chipIconVisible = false
+                textSize = 11f
+                setOnClickListener { vm.setModel(spec.id) }
+            }
+            binding.chipGroupModels.addView(chip)
+            chipModelMap[spec.id] = chip
+        }
+    }
+
+    private fun updateModelDetail(spec: ModelSpec?) {
+        if (spec == null) {
+            binding.tvModelName.text = "—"
+            binding.tvModelDesc.text = "—"
+            binding.chipScale.text = "—"
+            binding.chipSize.text = "— MB"
+            binding.chipSpeed.text = "—"
+            return
+        }
+        binding.tvModelName.text = spec.displayName
+        binding.tvModelDesc.text = spec.description
+        binding.chipScale.text = "×${spec.scale}"
+        binding.chipSize.text = "${spec.approxSizeMb} MB"
+        binding.chipSpeed.text = spec.speedLabel
+    }
+
     private fun observeState() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -118,8 +158,10 @@ class MainActivity : AppCompatActivity() {
                             StatusKind.RUNNING -> R.drawable.dot_running
                             StatusKind.DONE -> R.drawable.dot_done
                             StatusKind.ERROR -> R.drawable.dot_error
+                            StatusKind.CANCELLED -> R.drawable.dot_idle
                         }
                     )
+
                     if (s.processing) {
                         binding.linearProgress.visibility = View.VISIBLE
                         binding.linearProgress.isIndeterminate = s.progressPercent == 0
@@ -128,7 +170,11 @@ class MainActivity : AppCompatActivity() {
                         binding.linearProgress.visibility = View.VISIBLE
                         binding.linearProgress.isIndeterminate = false
                         binding.linearProgress.setProgressCompat(s.progressPercent, true)
-                    } else binding.linearProgress.visibility = View.INVISIBLE
+                    } else {
+                        binding.linearProgress.visibility = View.INVISIBLE
+                    }
+
+                    binding.btnCancel.visibility = if (s.canCancel) View.VISIBLE else View.GONE
 
                     binding.btnUpscale.isEnabled = s.source != null && !s.processing
                     binding.btnPick.isEnabled = !s.processing
@@ -139,6 +185,14 @@ class MainActivity : AppCompatActivity() {
                     binding.chipBackend.text = s.backend.label
                     binding.tvLog.text = s.log.takeLast(14).joinToString("\n")
                     binding.tvThreadCount.text = s.threadCount.toString()
+
+                    if (binding.chipGroupModels.childCount != s.availableModels.size) {
+                        buildModelChips(s.availableModels, s.selectedModelId)
+                    } else {
+                        chipModelMap[s.selectedModelId]?.isChecked = true
+                    }
+                    updateModelDetail(s.selectedModel)
+                    binding.chipGroupModels.isEnabled = !s.processing
 
                     s.gpuInfo?.let { gpu ->
                         binding.tvGpu.text = if (gpu.isAdreno && gpu.adrenoSeries != "unknown")

@@ -67,6 +67,117 @@
                 android:textColor="@color/md_on_surface_variant"
                 android:textSize="12sp"/>
 
+            <!-- MODEL PICKER -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md"
+                app:cardBackgroundColor="@color/md_surface"
+                app:cardCornerRadius="@dimen/radius_lg"
+                app:cardElevation="0dp"
+                app:strokeColor="@color/md_outline"
+                app:strokeWidth="1dp">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="@dimen/space_lg">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Model AI"
+                        android:textColor="@color/md_on_surface"
+                        android:textSize="14sp"
+                        android:textStyle="bold"/>
+
+                    <HorizontalScrollView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_sm"
+                        android:scrollbars="none">
+                        <com.google.android.material.chip.ChipGroup
+                            android:id="@+id/chipGroupModels"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            app:chipSpacingHorizontal="8dp"
+                            app:singleLine="true"
+                            app:singleSelection="true"
+                            app:selectionRequired="true"/>
+                    </HorizontalScrollView>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_sm"
+                        android:background="@drawable/bg_info_panel"
+                        android:orientation="vertical"
+                        android:padding="@dimen/space_md">
+
+                        <TextView
+                            android:id="@+id/tvModelName"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="—"
+                            android:textColor="@color/md_on_surface"
+                            android:textSize="13sp"
+                            android:textStyle="bold"/>
+
+                        <TextView
+                            android:id="@+id/tvModelDesc"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="—"
+                            android:textColor="@color/md_on_surface_variant"
+                            android:textSize="11sp"/>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_sm"
+                            android:orientation="horizontal">
+
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/chipScale"
+                                style="@style/Widget.Material3.Chip.Assist"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="6dp"
+                                android:checkable="false"
+                                android:clickable="false"
+                                android:text="×4"
+                                android:textSize="10sp"
+                                app:chipMinHeight="24dp"/>
+
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/chipSize"
+                                style="@style/Widget.Material3.Chip.Assist"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="6dp"
+                                android:checkable="false"
+                                android:clickable="false"
+                                android:text="— MB"
+                                android:textSize="10sp"
+                                app:chipMinHeight="24dp"/>
+
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/chipSpeed"
+                                style="@style/Widget.Material3.Chip.Assist"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:checkable="false"
+                                android:clickable="false"
+                                android:text="—"
+                                android:textSize="10sp"
+                                app:chipMinHeight="24dp"/>
+                        </LinearLayout>
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- STATUS CARD -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -132,10 +243,31 @@
                         android:textColor="@color/md_on_surface_variant"
                         android:textSize="10sp"/>
 
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnCancel"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="40dp"
+                        android:layout_marginTop="@dimen/space_md"
+                        android:text="Batalkan"
+                        android:textColor="@color/status_error"
+                        android:textSize="12sp"
+                        android:visibility="gone"
+                        app:cornerRadius="@dimen/radius_pill"
+                        app:icon="@android:drawable/ic_menu_close_clear_cancel"
+                        app:iconTint="@color/status_error"
+                        app:strokeColor="@color/status_error"/>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginTop="@dimen/space_md"
+                        android:layout_marginBottom="@dimen/space_md"
+                        android:background="@color/md_outline"/>
+
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/space_md"
                         android:gravity="center_vertical"
                         android:orientation="horizontal">
                         <TextView

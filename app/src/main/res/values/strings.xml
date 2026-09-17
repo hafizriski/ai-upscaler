@@ -4,11 +4,13 @@
     <string name="action_upscale">Upscale</string>
     <string name="action_save">Simpan</string>
     <string name="action_share">Bagikan</string>
+    <string name="action_cancel">Batalkan</string>
     <string name="status_idle">Siap</string>
     <string name="label_cpu">CPU</string>
     <string name="label_ram">RAM</string>
     <string name="label_gpu">GPU</string>
     <string name="label_detail">Detail proses</string>
+    <string name="label_model">Model AI</string>
     <string name="hint_pick_image">Pilih gambar untuk memulai</string>
     <string name="saved_success">Tersimpan di Pictures/AIUpscaler</string>
     <string name="cd_image_preview">Pratinjau gambar</string>
