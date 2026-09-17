@@ -4,7 +4,6 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -46,12 +45,8 @@ class MainActivity : AppCompatActivity() {
     private val requestPermission = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { result ->
-        val allGranted = result.values.all { it }
-        if (allGranted) {
-            toast("Izin diberikan")
-        } else {
-            toast("Izin ditolak — pilih gambar mungkin gagal")
-        }
+        if (result.values.all { it }) toast("Izin diberikan")
+        else toast("Izin ditolak")
     }
 
     private val systemTicker = object : Runnable {
@@ -63,16 +58,11 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // Edge-to-edge setup (Android 10+, backward compatible)
         WindowCompat.setDecorFitsSystemWindows(window, false)
-
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Apply window insets ke toolbar & bottomBar
         applyWindowInsets()
-
         setupListeners()
         observeState()
         ensurePermissions()
@@ -85,16 +75,21 @@ class MainActivity : AppCompatActivity() {
             val sysBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             val cutout = insets.getInsets(WindowInsetsCompat.Type.displayCutout())
 
+            // Toolbar: tambah padding top = status bar height
             binding.toolbar.updatePadding(
                 top = sysBars.top,
                 left = cutout.left,
                 right = cutout.right
             )
+
+            // BottomBar: tambah padding bottom = nav bar height
+            val basePad = (12 * resources.displayMetrics.density).toInt()
             binding.bottomBar.updatePadding(
-                bottom = sysBars.bottom,
-                left = cutout.left,
-                right = cutout.right
+                bottom = basePad + sysBars.bottom,
+                left = basePad + cutout.left,
+                right = basePad + cutout.right
             )
+
             insets
         }
     }
@@ -213,9 +208,7 @@ class MainActivity : AppCompatActivity() {
                         getString(R.string.saved_success),
                         Snackbar.LENGTH_LONG
                     ).show()
-                } else {
-                    toast("Gagal menyimpan")
-                }
+                } else toast("Gagal menyimpan")
             }
         }
     }

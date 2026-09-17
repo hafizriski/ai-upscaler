@@ -32,7 +32,8 @@ class TileProcessor(private val engine: AdaptiveInterpreter) {
         val state = engine.state
         val tile = state.inH
         val scale = state.scaleFactor.coerceAtLeast(1)
-        val overlap = 8
+
+        val overlap = if (w > tile || h > tile) 8 else 0
         val stride = (tile - overlap).coerceAtLeast(1)
 
         val outW = w * scale
@@ -44,25 +45,26 @@ class TileProcessor(private val engine: AdaptiveInterpreter) {
         val canvas = Canvas(output)
         val paint = Paint(Paint.FILTER_BITMAP_FLAG)
 
-        val tilesX = if (w <= tile) 1 else ((w - tile) / stride) + 2
-        val tilesY = if (h <= tile) 1 else ((h - tile) / stride) + 2
-        val total = tilesX * tilesY
+        // Precompute posisi unik — tidak ada duplikat
+        val xPositions = computePositions(w, tile, stride)
+        val yPositions = computePositions(h, tile, stride)
+        val total = xPositions.size * yPositions.size
 
         var done = 0
         var failed = 0
         val startTime = System.currentTimeMillis()
 
-        emit(ProgressEvent.Log("Total $total tile"))
+        emit(ProgressEvent.Log("Total $total tile (${xPositions.size}×${yPositions.size})"))
 
-        var y = 0
-        while (y < h) {
-            var x = 0
-            while (x < w) {
+        outer@ for (y in yPositions) {
+            for (x in xPositions) {
+                if (done >= total) break@outer
+
                 val cw = minOf(tile, w - x)
                 val ch = minOf(tile, h - y)
                 val tileStart = System.currentTimeMillis()
 
-                val result = try {
+                val ok = try {
                     val patch = Bitmap.createBitmap(argb, x, y, cw, ch)
                     val padded = Bitmap.createBitmap(tile, tile, Bitmap.Config.ARGB_8888)
                     Canvas(padded).drawBitmap(patch, 0f, 0f, null)
@@ -70,9 +72,18 @@ class TileProcessor(private val engine: AdaptiveInterpreter) {
                     when (val r = engine.run(inputBuf)) {
                         is AppResult.Success -> {
                             val bmp = OutputConverter.toBitmap(r.data, tile * scale)
-                            val crop = Bitmap.createBitmap(bmp, 0, 0, cw * scale, ch * scale)
-                            canvas.drawBitmap(crop, (x * scale).toFloat(), (y * scale).toFloat(), paint)
-                            true
+                            val cropW = cw * scale
+                            val cropH = ch * scale
+                            if (cropW <= bmp.width && cropH <= bmp.height) {
+                                val crop = Bitmap.createBitmap(bmp, 0, 0, cropW, cropH)
+                                canvas.drawBitmap(
+                                    crop,
+                                    (x * scale).toFloat(),
+                                    (y * scale).toFloat(),
+                                    paint
+                                )
+                                true
+                            } else false
                         }
                         is AppResult.Failure -> false
                     }
@@ -81,38 +92,58 @@ class TileProcessor(private val engine: AdaptiveInterpreter) {
                     false
                 }
 
-                if (!result) {
+                if (!ok) {
                     failed++
                     try {
                         val patch = Bitmap.createBitmap(argb, x, y, cw, ch)
                         val scaled = BilinearUpscaler.upscale(patch, scale)
-                        canvas.drawBitmap(scaled, (x * scale).toFloat(), (y * scale).toFloat(), paint)
+                        canvas.drawBitmap(
+                            scaled,
+                            (x * scale).toFloat(),
+                            (y * scale).toFloat(),
+                            paint
+                        )
                     } catch (_: Throwable) {}
                 }
 
                 done++
+                val current = done.coerceAtMost(total)
                 val elapsed = System.currentTimeMillis() - startTime
                 val msPerTile = System.currentTimeMillis() - tileStart
-                val avg = if (done > 0) elapsed / done else 0
-                val eta = (total - done) * avg
+                val avg = if (current > 0) elapsed / current else 0
+                val remaining = (total - current).coerceAtLeast(0)
+                val eta = remaining * avg
 
                 emit(ProgressEvent.TileProgress(
-                    current = done, total = total, msPerTile = msPerTile,
-                    elapsedMs = elapsed, etaMs = eta
+                    current = current,
+                    total = total,
+                    msPerTile = msPerTile,
+                    elapsedMs = elapsed,
+                    etaMs = eta
                 ))
-
-                x += stride
-                if (x + tile > w) x = maxOf(0, w - tile)
-                if (x >= w) break
             }
-            y += stride
-            if (y + tile > h) y = maxOf(0, h - tile)
-            if (y >= h) break
         }
 
         val elapsedTotal = System.currentTimeMillis() - startTime
         emit(ProgressEvent.Log("Selesai ${elapsedTotal / 1000.0}s"))
 
         return ProcessOutcome.Success(output, done, failed, elapsedTotal)
+    }
+
+    /**
+     * Hitung posisi tile unik. Tidak ada duplikat, tidak ada yang lewat batas.
+     */
+    private fun computePositions(size: Int, tile: Int, stride: Int): List<Int> {
+        if (size <= tile) return listOf(0)
+
+        val result = mutableListOf<Int>()
+        var pos = 0
+        while (pos + tile <= size) {
+            if (result.isEmpty() || result.last() != pos) result.add(pos)
+            pos += stride
+        }
+        val last = size - tile
+        if (result.isEmpty() || result.last() != last) result.add(last)
+        return result
     }
 }

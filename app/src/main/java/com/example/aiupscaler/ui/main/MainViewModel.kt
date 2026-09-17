@@ -91,14 +91,22 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         st.copy(log = (st.log + "✗ ${event.message}").takeLast(40))
                     }
                     is ProgressEvent.Stage -> _state.update { st ->
-                        st.copy(statusText = event.phase,
-                            progressText = event.detail.ifEmpty { event.phase })
+                        st.copy(
+                            statusText = event.phase,
+                            progressText = event.detail.ifEmpty { event.phase }
+                        )
                     }
                     is ProgressEvent.TileProgress -> _state.update { st ->
+                        val pct = if (event.total > 0) {
+                            ((event.current.toFloat() / event.total) * 100f)
+                                .toInt()
+                                .coerceIn(0, 100)
+                        } else 0
+                        val currentSafe = event.current.coerceAtMost(event.total)
                         st.copy(
                             statusText = "Proses tile",
-                            progressPercent = (event.current.toFloat() / event.total * 100).toInt(),
-                            progressText = "Tile ${event.current}/${event.total} · ${event.msPerTile}ms/tile"
+                            progressPercent = pct,
+                            progressText = "Tile $currentSafe/${event.total} · ${event.msPerTile}ms/tile"
                         )
                     }
                     is ProgressEvent.Complete -> handleComplete(event.result)
