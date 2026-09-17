@@ -1,26 +1,31 @@
 package com.example.aiupscaler.ui.main
 
-import android.content.ContentValues
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.provider.MediaStore
 import android.view.View
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.example.aiupscaler.R
 import com.example.aiupscaler.databinding.ActivityMainBinding
 import com.example.aiupscaler.ml.engine.Backend
+import com.example.aiupscaler.util.ImageSaver
+import com.example.aiupscaler.util.PermissionHelper
 import com.example.aiupscaler.util.SystemMonitor
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.Dispatchers
@@ -38,6 +43,17 @@ class MainActivity : AppCompatActivity() {
         ActivityResultContracts.GetContent()
     ) { uri -> uri?.let { loadUri(it) } }
 
+    private val requestPermission = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { result ->
+        val allGranted = result.values.all { it }
+        if (allGranted) {
+            toast("Izin diberikan")
+        } else {
+            toast("Izin ditolak — pilih gambar mungkin gagal")
+        }
+    }
+
     private val systemTicker = object : Runnable {
         override fun run() {
             refreshSystem()
@@ -47,12 +63,46 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Edge-to-edge setup (Android 10+, backward compatible)
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // Apply window insets ke toolbar & bottomBar
+        applyWindowInsets()
+
         setupListeners()
         observeState()
+        ensurePermissions()
+
         ui.post(systemTicker)
+    }
+
+    private fun applyWindowInsets() {
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, insets ->
+            val sysBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            val cutout = insets.getInsets(WindowInsetsCompat.Type.displayCutout())
+
+            binding.toolbar.updatePadding(
+                top = sysBars.top,
+                left = cutout.left,
+                right = cutout.right
+            )
+            binding.bottomBar.updatePadding(
+                bottom = sysBars.bottom,
+                left = cutout.left,
+                right = cutout.right
+            )
+            insets
+        }
+    }
+
+    private fun ensurePermissions() {
+        if (!PermissionHelper.hasPermission(this)) {
+            requestPermission.launch(PermissionHelper.getRequiredPermissions())
+        }
     }
 
     override fun onDestroy() {
@@ -61,7 +111,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupListeners() {
-        binding.btnPick.setOnClickListener { pick.launch("image/*") }
+        binding.btnPick.setOnClickListener {
+            if (!PermissionHelper.hasPermission(this)) {
+                requestPermission.launch(PermissionHelper.getRequiredPermissions())
+            } else {
+                pick.launch("image/*")
+            }
+        }
         binding.btnUpscale.setOnClickListener {
             if (vm.state.value.source == null) toast("Pilih gambar dulu")
             else vm.upscale()
@@ -145,23 +201,21 @@ class MainActivity : AppCompatActivity() {
     private fun saveResult() {
         val bmp = vm.state.value.result ?: return
         lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                val values = ContentValues().apply {
-                    put(MediaStore.Images.Media.DISPLAY_NAME, "upscaled_${System.currentTimeMillis()}.png")
-                    put(MediaStore.Images.Media.MIME_TYPE, "image/png")
-                    put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/AIUpscaler")
+            val uri = ImageSaver.saveToGallery(
+                context = this@MainActivity,
+                bitmap = bmp,
+                displayName = "upscaled_${System.currentTimeMillis()}.png"
+            )
+            withContext(Dispatchers.Main) {
+                if (uri != null) {
+                    Snackbar.make(
+                        binding.root,
+                        getString(R.string.saved_success),
+                        Snackbar.LENGTH_LONG
+                    ).show()
+                } else {
+                    toast("Gagal menyimpan")
                 }
-                val uri = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
-                uri?.let {
-                    contentResolver.openOutputStream(it)?.use { os ->
-                        bmp.compress(Bitmap.CompressFormat.PNG, 100, os)
-                    }
-                    withContext(Dispatchers.Main) {
-                        Snackbar.make(binding.root, getString(R.string.saved_success), Snackbar.LENGTH_LONG).show()
-                    }
-                }
-            } catch (e: Throwable) {
-                withContext(Dispatchers.Main) { toast("Gagal simpan: ${e.message}") }
             }
         }
     }
@@ -172,7 +226,11 @@ class MainActivity : AppCompatActivity() {
             try {
                 val path = File(cacheDir, "share_${System.currentTimeMillis()}.png")
                 path.outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
-                val uri = FileProvider.getUriForFile(this@MainActivity, "$packageName.fileprovider", path)
+                val uri = FileProvider.getUriForFile(
+                    this@MainActivity,
+                    "$packageName.fileprovider",
+                    path
+                )
                 withContext(Dispatchers.Main) {
                     val intent = Intent(Intent.ACTION_SEND).apply {
                         type = "image/png"
