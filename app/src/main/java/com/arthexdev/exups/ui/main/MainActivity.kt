@@ -178,11 +178,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupListeners() {
-        binding.fabAdd.setOnLongClickListener {
+        binding.fabAdd.setOnLongClickListener { view ->
+            view.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)
             startActivity(Intent(this, BatchActivity::class.java))
             true
         }
-        binding.fabAdd.setOnClickListener {
+        binding.fabAdd.setOnClickListener { view ->
+            view.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
             if (!PermissionHelper.hasStoragePermission(this)) {
                 requestPermission.launch(PermissionHelper.getRequiredPermissions())
             } else pick.launch("image/*")
@@ -201,7 +203,9 @@ class MainActivity : AppCompatActivity() {
             shareResult()
         }
 
-        binding.navHome.setOnClickListener { showTab(0) }
+        binding.navHome.setOnClickListener {
+            showTab(0)
+        }
         binding.navGallery.setOnClickListener {
             showTab(1)
             refreshGallery()
@@ -212,7 +216,10 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.btnCancel.setOnClickListener { view ->
-            view.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP) vm.cancel(); toast("Dibatalkan") }
+            view.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
+            vm.cancel()
+            toast("Dibatalkan")
+        }
 
         val s = vm.state.value
         binding.sliderThreads.valueTo = s.maxThreads.toFloat().coerceAtLeast(1f)
