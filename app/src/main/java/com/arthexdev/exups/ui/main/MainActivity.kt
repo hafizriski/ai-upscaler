@@ -205,16 +205,20 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.navHome.setOnClickListener { showTab(0) }
+            it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
         binding.navGallery.setOnClickListener {
+            it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
             showTab(1)
             refreshGallery()
         }
         binding.navProfile.setOnClickListener {
+            it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
             showTab(2)
             loadProfilePhoto()
         }
 
         binding.btnCancel.setOnClickListener { vm.cancel(); toast("Dibatalkan") }
+            it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
 
         val s = vm.state.value
         binding.sliderThreads.valueTo = s.maxThreads.toFloat().coerceAtLeast(1f)
@@ -470,4 +474,16 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun toast(m: String) = Toast.makeText(this, m, Toast.LENGTH_SHORT).show()
+
+    private fun copyResultToClipboard() {
+        val bmp = vm.state.value.result ?: return
+        try {
+            val clipboard = getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
+            val clip = android.content.ClipData.newBitmap("Upscaled", bmp)
+            clipboard.setPrimaryClip(clip)
+            toast("Hasil disalin ke clipboard")
+        } catch (e: Throwable) {
+            toast("Gagal copy: ${e.message}")
+        }
+    }
 }

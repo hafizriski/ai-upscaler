@@ -25,6 +25,14 @@ class GalleryRepository(context: Context) {
         } catch (_: Throwable) { null }
     }
 
+    fun listItemsSorted(by: String = "date"): List<GalleryItem> {
+        return when (by) {
+            "size" -> listItems().sortedByDescending { it.file.length() }
+            "name" -> listItems().sortedBy { it.name }
+            else -> listItems()
+        }
+    }
+
     fun listItems(): List<GalleryItem> {
         return galleryDir.listFiles()
             ?.filter { it.isFile && (it.extension == "png" || it.extension == "jpg") }
