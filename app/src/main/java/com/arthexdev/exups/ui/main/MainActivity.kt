@@ -139,12 +139,11 @@ class MainActivity : AppCompatActivity() {
         loadProfilePhoto()
 
         binding.avatarContainer.setOnClickListener {
-            it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
             pickPhoto.launch("image/*")
         }
 
-        binding.btnSaveProfile.setOnClickListener {
-            it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+        binding.btnSaveProfile.setOnClickListener { view ->
+            view.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
             val username = binding.etUsername.text?.toString()?.trim() ?: ""
             if (username.isEmpty()) {
                 toast("Username tidak boleh kosong")
@@ -185,40 +184,36 @@ class MainActivity : AppCompatActivity() {
             true
         }
         binding.fabAdd.setOnClickListener {
-            it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
             if (!PermissionHelper.hasStoragePermission(this)) {
                 requestPermission.launch(PermissionHelper.getRequiredPermissions())
             } else pick.launch("image/*")
         }
 
-        binding.btnUpscale.setOnClickListener {
-            it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+        binding.btnUpscale.setOnClickListener { view ->
+            view.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
             vm.ensureModelAndUpscale()
         }
-        binding.btnSave.setOnClickListener {
-            it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+        binding.btnSave.setOnClickListener { view ->
+            view.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
             saveResult()
         }
-        binding.btnShare.setOnClickListener {
-            it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+        binding.btnShare.setOnClickListener { view ->
+            view.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
             shareResult()
         }
 
         binding.navHome.setOnClickListener { showTab(0) }
-            it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
         binding.navGallery.setOnClickListener {
-            it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
             showTab(1)
             refreshGallery()
         }
         binding.navProfile.setOnClickListener {
-            it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
             showTab(2)
             loadProfilePhoto()
         }
 
-        binding.btnCancel.setOnClickListener { vm.cancel(); toast("Dibatalkan") }
-            it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+        binding.btnCancel.setOnClickListener { view ->
+            view.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP) vm.cancel(); toast("Dibatalkan") }
 
         val s = vm.state.value
         binding.sliderThreads.valueTo = s.maxThreads.toFloat().coerceAtLeast(1f)
@@ -475,15 +470,4 @@ class MainActivity : AppCompatActivity() {
 
     private fun toast(m: String) = Toast.makeText(this, m, Toast.LENGTH_SHORT).show()
 
-    private fun copyResultToClipboard() {
-        val bmp = vm.state.value.result ?: return
-        try {
-            val clipboard = getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
-            val clip = android.content.ClipData.newBitmap("Upscaled", bmp)
-            clipboard.setPrimaryClip(clip)
-            toast("Hasil disalin ke clipboard")
-        } catch (e: Throwable) {
-            toast("Gagal copy: ${e.message}")
-        }
-    }
 }
