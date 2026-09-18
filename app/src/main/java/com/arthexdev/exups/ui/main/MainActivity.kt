@@ -179,7 +179,6 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupListeners() {
         binding.fabAdd.setOnLongClickListener {
-            it.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
             startActivity(Intent(this, BatchActivity::class.java))
             true
         }
