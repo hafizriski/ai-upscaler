@@ -201,7 +201,10 @@ class MainActivity : AppCompatActivity() {
             view.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
             val selectedModel = vm.state.value.selectedModel
             ProcessOptionsDialog.show(this, selectedModel) { result ->
-                vm.setBackend(if (result.useGpu) com.arthexdev.exups.ml.engine.Backend.AUTO else com.arthexdev.exups.ml.engine.Backend.CPU)
+                vm.setBackend(
+                    if (result.useGpu) com.arthexdev.exups.ml.engine.Backend.AUTO
+                    else com.arthexdev.exups.ml.engine.Backend.CPU
+                )
                 vm.ensureModelAndUpscale()
             }
         }
@@ -230,6 +233,11 @@ class MainActivity : AppCompatActivity() {
             view.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
             vm.cancel()
             toast("Dibatalkan")
+        }
+
+        binding.btnOpenSettings.setOnClickListener { view ->
+            view.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
+            startActivity(Intent(this, SettingsActivity::class.java))
         }
 
         val s = vm.state.value
