@@ -81,6 +81,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        ThemePreferences.applyStored(this)
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -145,7 +146,10 @@ class MainActivity : AppCompatActivity() {
         binding.btnSaveProfile.setOnClickListener {
             it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
             val username = binding.etUsername.text?.toString()?.trim() ?: ""
-            if (username.isEmpty()) { toast("Username tidak boleh kosong"); return@setOnClickListener }
+            if (username.isEmpty()) {
+                toast("Username tidak boleh kosong")
+                return@setOnClickListener
+            }
             profileRepo.setUsername(username)
             Snackbar.make(binding.root, getString(R.string.profile_saved), Snackbar.LENGTH_SHORT).show()
         }
@@ -191,15 +195,23 @@ class MainActivity : AppCompatActivity() {
             it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
             vm.ensureModelAndUpscale()
         }
-        binding.btnSave.setOnClickListener { saveResult() }
-        binding.btnShare.setOnClickListener { shareResult() }
+        binding.btnSave.setOnClickListener {
+            it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+            saveResult()
+        }
+        binding.btnShare.setOnClickListener {
+            it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+            shareResult()
+        }
 
         binding.navHome.setOnClickListener { showTab(0) }
         binding.navGallery.setOnClickListener {
-            showTab(1); refreshGallery()
+            showTab(1)
+            refreshGallery()
         }
         binding.navProfile.setOnClickListener {
-            showTab(2); loadProfilePhoto()
+            showTab(2)
+            loadProfilePhoto()
         }
 
         binding.btnCancel.setOnClickListener { vm.cancel(); toast("Dibatalkan") }
@@ -240,12 +252,16 @@ class MainActivity : AppCompatActivity() {
         when (index) {
             0 -> {
                 binding.tabHome.visibility = View.VISIBLE
+                binding.tabHome.alpha = 0f
+                binding.tabHome.animate().alpha(1f).setDuration(220).start()
                 binding.fabAdd.visibility = View.VISIBLE
                 binding.ivNavHome.setColorFilter(getColor(R.color.ios_blue))
                 binding.tvNavHome.setTextColor(getColor(R.color.ios_blue))
             }
             1 -> {
                 binding.tabGallery.visibility = View.VISIBLE
+                binding.tabGallery.alpha = 0f
+                binding.tabGallery.animate().alpha(1f).setDuration(220).start()
                 binding.fabAdd.visibility = View.GONE
                 binding.ivNavGallery.setColorFilter(getColor(R.color.ios_blue))
                 binding.tvNavGallery.setTextColor(getColor(R.color.ios_blue))
@@ -253,6 +269,8 @@ class MainActivity : AppCompatActivity() {
             }
             2 -> {
                 binding.tabProfile.visibility = View.VISIBLE
+                binding.tabProfile.alpha = 0f
+                binding.tabProfile.animate().alpha(1f).setDuration(220).start()
                 binding.fabAdd.visibility = View.GONE
                 binding.ivNavProfile.setColorFilter(getColor(R.color.ios_blue))
                 binding.tvNavProfile.setTextColor(getColor(R.color.ios_blue))
@@ -293,21 +311,19 @@ class MainActivity : AppCompatActivity() {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 vm.state.collect { s ->
                     binding.imagePreview.setImageBitmap(s.result ?: s.source)
-
-                    // Before/After slider (findViewById, bukan binding include)
-                    if (s.source != null && s.result != null) {
-                        val slider = findViewById<BeforeAfterSlider>(R.id.beforeAfterSlider)
-                        slider?.setBitmaps(s.source, s.result)
-                        slider?.visibility = View.VISIBLE
-                        binding.imagePreview.visibility = View.GONE
-                    } else {
-                        findViewById<BeforeAfterSlider>(R.id.beforeAfterSlider)?.visibility = View.GONE
-                        binding.imagePreview.visibility = View.VISIBLE
-                    }
-
-                    }
                     binding.previewPlaceholder.visibility =
                         if (s.result == null && s.source == null) View.VISIBLE else View.GONE
+
+                    // Before/After slider (findViewById, bukan binding include)
+                    val slider = findViewById<BeforeAfterSlider>(R.id.beforeAfterSlider)
+                    if (s.source != null && s.result != null && slider != null) {
+                        slider.setBitmaps(s.source, s.result)
+                        slider.visibility = View.VISIBLE
+                        binding.imagePreview.visibility = View.GONE
+                    } else {
+                        slider?.visibility = View.GONE
+                        binding.imagePreview.visibility = View.VISIBLE
+                    }
 
                     binding.tvInfo.text = s.info
                     binding.tvStatus.text = s.statusText
@@ -333,8 +349,11 @@ class MainActivity : AppCompatActivity() {
                         binding.progressOverlay.visibility = View.VISIBLE
                         binding.progressScrim.visibility = View.VISIBLE
                         binding.circularProgress.isIndeterminate = s.progressPercent == 0
-                        if (s.progressPercent > 0) binding.circularProgress.setProgressCompat(s.progressPercent, true)
-                        binding.tvOverlayPercent.text = if (s.progressPercent > 0) "${s.progressPercent}%" else ""
+                        if (s.progressPercent > 0) {
+                            binding.circularProgress.setProgressCompat(s.progressPercent, true)
+                        }
+                        binding.tvOverlayPercent.text =
+                            if (s.progressPercent > 0) "${s.progressPercent}%" else ""
                     } else {
                         binding.linearProgress.visibility = View.INVISIBLE
                         binding.progressOverlay.visibility = View.GONE
@@ -392,14 +411,17 @@ class MainActivity : AppCompatActivity() {
     private fun loadUri(uri: Uri) {
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                val s = contentResolver.openInputStream(uri) ?: return@launch
-                val bmp = BitmapFactory.decodeStream(s)
-                s.close()
-                if (bmp == null) withContext(Dispatchers.Main) { toast("Gagal memuat") }
-                else withContext(Dispatchers.Main) {
-                    vm.setSource(bmp)
-                    binding.imagePreview.alpha = 0f
-                    binding.imagePreview.animate().alpha(1f).setDuration(300).start()
+                val stream = contentResolver.openInputStream(uri) ?: return@launch
+                val bmp = BitmapFactory.decodeStream(stream)
+                stream.close()
+                if (bmp == null) {
+                    withContext(Dispatchers.Main) { toast("Gagal memuat") }
+                } else {
+                    withContext(Dispatchers.Main) {
+                        vm.setSource(bmp)
+                        binding.imagePreview.alpha = 0f
+                        binding.imagePreview.animate().alpha(1f).setDuration(300).start()
+                    }
                 }
             } catch (e: Throwable) {
                 withContext(Dispatchers.Main) { toast("Error: ${e.message}") }
@@ -415,9 +437,9 @@ class MainActivity : AppCompatActivity() {
                 "upscaled_${System.currentTimeMillis()}.png"
             )
             withContext(Dispatchers.Main) {
-                if (uri != null) Snackbar.make(binding.root,
-                    getString(R.string.saved_success), Snackbar.LENGTH_LONG).show()
-                else toast("Gagal menyimpan")
+                if (uri != null) {
+                    Snackbar.make(binding.root, getString(R.string.saved_success), Snackbar.LENGTH_LONG).show()
+                } else toast("Gagal menyimpan")
             }
         }
     }
