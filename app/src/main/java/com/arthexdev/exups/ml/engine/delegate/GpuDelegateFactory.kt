@@ -12,8 +12,8 @@ object GpuDelegateFactory {
     data class Result(val options: Interpreter.Options, val delegate: GpuDelegate?)
 
     /**
-     * Coba aktifkan GPU delegate (OpenGL ES 3.1+).
-     * Return null kalau tidak kompatibel / gagal.
+     * Kompatibel dengan tensorflow-lite-gpu:2.14.0.
+     * Pakai default GpuDelegate() tanpa Options biar tidak error API.
      */
     fun build(context: Context): Result? {
         return try {
@@ -23,18 +23,14 @@ object GpuDelegateFactory {
                 return null
             }
 
-            val opts = GpuDelegate.Options().apply {
-                setPrecisionLossAllowed(true)   // FP16 fallback kalau FP32 tidak support
-                setInferencePreference(GpuDelegate.Options.INFERENCE_PREFERENCE_SUSTAINED_SPEED)
-            }
-
-            val delegate = GpuDelegate(opts)
+            // Pakai default delegate — API 2.14.0 paling stabil
+            val delegate = GpuDelegate()
             val interpOpts = Interpreter.Options().apply {
                 addDelegate(delegate)
-                setNumThreads(1)   // GPU delegate sudah multi-threaded internal
+                setNumThreads(1)   // GPU delegate internal sudah multi-thread
             }
 
-            Log.i(TAG, "GPU delegate aktif: ${compat.isDelegateSupportedOnThisDevice}")
+            Log.i(TAG, "GPU delegate aktif (default options)")
             Result(interpOpts, delegate)
         } catch (t: Throwable) {
             Log.w(TAG, "GPU delegate gagal: ${t.message}")
