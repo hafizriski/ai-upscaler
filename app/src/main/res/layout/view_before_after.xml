@@ -1,12 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout
+<com.arthexdev.exups.ui.widget.BeforeAfterSlider
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/beforeAfterContainer"
+    android:id="@+id/beforeAfterSlider"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
-
-    <com.arthexdev.exups.ui.widget.BeforeAfterSlider
-        android:id="@+id/beforeAfterSlider"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
-</FrameLayout>
+    android:layout_height="match_parent"/>

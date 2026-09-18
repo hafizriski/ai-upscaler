@@ -294,16 +294,17 @@ class MainActivity : AppCompatActivity() {
                 vm.state.collect { s ->
                     binding.imagePreview.setImageBitmap(s.result ?: s.source)
 
-                    // Before/After slider
+                    // Before/After slider (findViewById, bukan binding include)
                     if (s.source != null && s.result != null) {
-                        val slider = binding.beforeAfterInclude
-                            .findViewById<BeforeAfterSlider>(R.id.beforeAfterSlider)
+                        val slider = findViewById<BeforeAfterSlider>(R.id.beforeAfterSlider)
                         slider?.setBitmaps(s.source, s.result)
-                        binding.beforeAfterInclude.visibility = View.VISIBLE
+                        slider?.visibility = View.VISIBLE
                         binding.imagePreview.visibility = View.GONE
                     } else {
-                        binding.beforeAfterInclude.visibility = View.GONE
+                        findViewById<BeforeAfterSlider>(R.id.beforeAfterSlider)?.visibility = View.GONE
                         binding.imagePreview.visibility = View.VISIBLE
+                    }
+
                     }
                     binding.previewPlaceholder.visibility =
                         if (s.result == null && s.source == null) View.VISIBLE else View.GONE
