@@ -7,6 +7,10 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+env:
+  ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+  ANDROID_HOME: /usr/local/lib/android/sdk
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -17,8 +21,6 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
       - name: Grant gradlew
         run: chmod +x gradlew
       - name: Run unit tests
@@ -34,8 +36,6 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
       - name: Verify model
         run: test -f app/src/main/assets/models/realesr_general_x4v3.tflite
       - name: Grant gradlew
