@@ -81,7 +81,7 @@
                             android:layout_height="80dp"
                             android:alpha="0.5"
                             android:contentDescription="@string/app_name"
-                            android:src="@mipmap/ic_launcher"/>
+                            android:src="@android:drawable/ic_menu_gallery"/>
                         <TextView
                             style="@style/IOS_Subheadline"
                             android:layout_width="wrap_content"
