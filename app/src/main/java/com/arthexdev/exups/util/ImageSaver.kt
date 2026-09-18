@@ -1,6 +1,7 @@
 package com.arthexdev.exups.util
 
 import android.content.ContentValues
+import com.arthexdev.exups.ui.settings.SettingsPreferences
 import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri

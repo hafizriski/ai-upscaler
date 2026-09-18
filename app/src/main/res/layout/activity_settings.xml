@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/ios_bg"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- Toolbar -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fitsSystemWindows="true"
+            android:gravity="center_vertical"
+            android:minHeight="@dimen/toolbar_height"
+            android:orientation="horizontal"
+            android:paddingHorizontal="@dimen/sp_5">
+
+            <TextView
+                style="@style/IOS_LargeTitle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Settings"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSettingsBack"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/action_cancel"
+                android:textColor="@color/ios_blue"/>
+        </LinearLayout>
+
+        <!-- ═══ BASICS ═══ -->
+        <TextView
+            style="@style/IOS_Footnote"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/sp_4"
+            android:layout_marginStart="@dimen/sp_5"
+            android:text="BASICS"
+            android:textAllCaps="true"/>
+
+        <!-- Specify tilesize -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingHorizontal="@dimen/sp_5"
+            android:paddingTop="@dimen/sp_4">
+
+            <TextView
+                style="@style/IOS_Body"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Specify tilesize"/>
+
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/swSpecifyTile"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+        </LinearLayout>
+
+        <TextView
+            style="@style/IOS_Caption1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/sp_5"
+            android:layout_marginEnd="@dimen/sp_5"
+            android:text="The higher tilesize, the faster speed, but more likely to crash your device."/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="@dimen/sp_5"
+            android:paddingTop="@dimen/sp_3">
+
+            <com.google.android.material.slider.Slider
+                android:id="@+id/sliderTilesize"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:stepSize="8"
+                android:value="128"
+                android:valueFrom="64"
+                android:valueTo="256"
+                app:haloColor="@color/ios_blue"
+                app:labelBehavior="gone"
+                app:thumbColor="@color/ios_blue"
+                app:trackColorActive="@color/ios_blue"
+                app:trackColorInactive="@color/ios_bg_tertiary"/>
+
+            <TextView
+                android:id="@+id/tvTilesizeValue"
+                style="@style/IOS_Body"
+                android:layout_width="48dp"
+                android:layout_height="wrap_content"
+                android:fontFamily="monospace"
+                android:gravity="end"
+                android:text="128"
+                android:textColor="@color/ios_blue"
+                android:textStyle="bold"/>
+        </LinearLayout>
+
+        <!-- Limit GPU -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/sp_5"
+            android:orientation="horizontal"
+            android:paddingHorizontal="@dimen/sp_5">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    style="@style/IOS_Body"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Limit GPU Performance"/>
+
+                <TextView
+                    style="@style/IOS_Caption1"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Limit tilesize to avoid laggy screen during GPU processing"/>
+            </LinearLayout>
+
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/swLimitGpu"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"/>
+        </LinearLayout>
+
+        <!-- Keep screen on -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/sp_5"
+            android:orientation="horizontal"
+            android:paddingHorizontal="@dimen/sp_5">
+
+            <TextView
+                style="@style/IOS_Body"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Keep screen on while processing"/>
+
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/swKeepScreen"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+        </LinearLayout>
+
+        <!-- ═══ IMAGE ═══ -->
+        <TextView
+            style="@style/IOS_Footnote"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/sp_8"
+            android:layout_marginStart="@dimen/sp_5"
+            android:text="IMAGE"
+            android:textAllCaps="true"/>
+
+        <!-- Pick from gallery -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/sp_4"
+            android:orientation="horizontal"
+            android:paddingHorizontal="@dimen/sp_5">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    style="@style/IOS_Body"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Pick image from gallery"/>
+
+                <TextView
+                    style="@style/IOS_Caption1"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="File browser is more stable for picking images. However, you can still use gallery to do so."/>
+            </LinearLayout>
+
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/swPickGallery"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"/>
+        </LinearLayout>
+
+        <!-- Save location -->
+        <LinearLayout
+            android:id="@+id/rowSaveLocation"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/sp_5"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true"
+            android:orientation="vertical"
+            android:paddingHorizontal="@dimen/sp_5"
+            android:paddingVertical="@dimen/sp_2">
+
+            <TextView
+                style="@style/IOS_Body"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Save location"/>
+
+            <TextView
+                android:id="@+id/tvSaveLocation"
+                style="@style/IOS_Caption1"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Not set yet"/>
+        </LinearLayout>
+
+        <!-- Output format -->
+        <LinearLayout
+            android:id="@+id/rowOutputFormat"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/sp_3"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true"
+            android:orientation="vertical"
+            android:paddingHorizontal="@dimen/sp_5"
+            android:paddingVertical="@dimen/sp_2">
+
+            <TextView
+                style="@style/IOS_Body"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Output image format"/>
+
+            <TextView
+                android:id="@+id/tvOutputFormat"
+                style="@style/IOS_Caption1"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="auto"/>
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/sp_10"/>
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

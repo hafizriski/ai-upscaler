@@ -4,6 +4,7 @@ import android.app.ActivityManager
 import android.content.Context
 import android.opengl.GLES20
 import android.os.Build
+import com.arthexdev.exups.ui.settings.SettingsPreferences
 import java.io.File
 
 object PerformanceConfig {
@@ -157,5 +158,14 @@ object PerformanceConfig {
                "ram=${c.ramTierMb}MB gpu=${c.gpu.renderer} " +
                "vulkan=${c.gpu.supportsVulkan} fp16=${c.gpu.supportsFp16} " +
                "nnapi=${c.gpu.hasNnApi}"
+    }
+
+    /**
+     * Ambil tilesize custom dari Settings (kalau user aktifkan).
+     */
+    fun getCustomTilesize(context: Context): Int? {
+        return if (SettingsPreferences.isSpecifyTilesize(context)) {
+            SettingsPreferences.getTilesize(context)
+        } else null
     }
 }

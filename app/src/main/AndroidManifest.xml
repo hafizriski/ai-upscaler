@@ -51,6 +51,12 @@
             android:exported="false"
             android:theme="@style/Theme.AIUpscaler"/>
 
+        <activity
+            android:name=".ui.settings.SettingsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.AIUpscaler"
+            android:configChanges="orientation|screenSize|keyboardHidden|uiMode"/>
+
         <service
             android:name=".service.UpscaleNotificationService"
             android:exported="false"

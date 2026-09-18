@@ -28,6 +28,8 @@ import com.arthexdev.exups.ml.engine.ModelSpec
 import com.arthexdev.exups.ui.batch.BatchActivity
 import com.arthexdev.exups.ui.gallery.GalleryAdapter
 import com.arthexdev.exups.ui.gallery.GalleryViewerActivity
+import com.arthexdev.exups.ui.settings.SettingsActivity
+import com.arthexdev.exups.ui.settings.SettingsPreferences
 import com.arthexdev.exups.ui.widget.BeforeAfterSlider
 import com.arthexdev.exups.util.ImageSaver
 import com.arthexdev.exups.util.NotificationHelper
@@ -154,6 +156,11 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+        binding.btnOpenSettings.setOnClickListener { view ->
+            view.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
+            startActivity(Intent(this, SettingsActivity::class.java))
+        }
+
     private fun loadProfilePhoto() {
         val bmp = profileRepo.getPhoto()
         if (bmp != null) {
@@ -192,7 +199,11 @@ class MainActivity : AppCompatActivity() {
 
         binding.btnUpscale.setOnClickListener { view ->
             view.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
-            vm.ensureModelAndUpscale()
+            val selectedModel = vm.state.value.selectedModel
+            ProcessOptionsDialog.show(this, selectedModel) { result ->
+                vm.setBackend(if (result.useGpu) com.arthexdev.exups.ml.engine.Backend.AUTO else com.arthexdev.exups.ml.engine.Backend.CPU)
+                vm.ensureModelAndUpscale()
+            }
         }
         binding.btnSave.setOnClickListener { view ->
             view.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)

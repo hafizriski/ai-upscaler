@@ -679,6 +679,21 @@
                 app:cornerRadius="@dimen/r_pill"
                 app:elevation="0dp"/>
 
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnOpenSettings"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/button_height"
+                android:layout_marginTop="@dimen/sp_3"
+                android:text="Settings"
+                android:textAllCaps="false"
+                android:textColor="@color/ios_blue"
+                android:textSize="@dimen/ios_headline"
+                android:textStyle="bold"
+                app:backgroundTint="@color/ios_fill_tertiary"
+                app:cornerRadius="@dimen/r_pill"
+                app:elevation="0dp"/>
+
             <TextView
                 style="@style/IOS_Caption2"
                 android:layout_width="match_parent"

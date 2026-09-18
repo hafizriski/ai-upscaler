@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/ios_bg_elevated"
+    android:orientation="vertical"
+    android:padding="@dimen/sp_5">
+
+    <TextView
+        style="@style/IOS_Title3"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Process Options"
+        android:textColor="@color/ios_label"/>
+
+    <!-- Model Type row -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/sp_5"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            style="@style/IOS_Body"
+            android:layout_width="120dp"
+            android:layout_height="wrap_content"
+            android:text="Model Type:"
+            android:textColor="@color/ios_label"/>
+
+        <TextView
+            android:id="@+id/tvDialogModelType"
+            style="@style/IOS_Body"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Real-ESRGAN"
+            android:textColor="@color/ios_blue"
+            android:textStyle="bold"/>
+    </LinearLayout>
+
+    <!-- Model row -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/sp_3"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            style="@style/IOS_Body"
+            android:layout_width="120dp"
+            android:layout_height="wrap_content"
+            android:text="Model:"
+            android:textColor="@color/ios_label"/>
+
+        <TextView
+            android:id="@+id/tvDialogModel"
+            style="@style/IOS_Body"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="—"
+            android:textColor="@color/ios_blue"
+            android:textStyle="bold"/>
+    </LinearLayout>
+
+    <!-- Scale slider -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/sp_5"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            style="@style/IOS_Body"
+            android:layout_width="120dp"
+            android:layout_height="wrap_content"
+            android:text="Scale"
+            android:textColor="@color/ios_label"/>
+
+        <com.google.android.material.slider.Slider
+            android:id="@+id/sliderScale"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:stepSize="2"
+            android:value="4"
+            android:valueFrom="2"
+            android:valueTo="4"
+            app:haloColor="@color/ios_blue"
+            app:labelBehavior="gone"
+            app:thumbColor="@color/ios_blue"
+            app:trackColorActive="@color/ios_blue"
+            app:trackColorInactive="@color/ios_bg_tertiary"/>
+
+        <TextView
+            android:id="@+id/tvDialogScale"
+            style="@style/IOS_Body"
+            android:layout_width="40dp"
+            android:layout_height="wrap_content"
+            android:fontFamily="monospace"
+            android:gravity="end"
+            android:text="4X"
+            android:textColor="@color/ios_blue"
+            android:textStyle="bold"/>
+    </LinearLayout>
+
+    <!-- Denoise slider -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/sp_3"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            style="@style/IOS_Body"
+            android:layout_width="120dp"
+            android:layout_height="wrap_content"
+            android:text="Denoise"
+            android:textColor="@color/ios_label"/>
+
+        <com.google.android.material.slider.Slider
+            android:id="@+id/sliderDenoise"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:stepSize="1"
+            android:value="0"
+            android:valueFrom="0"
+            android:valueTo="100"
+            app:haloColor="@color/ios_blue"
+            app:labelBehavior="gone"
+            app:thumbColor="@color/ios_blue"
+            app:trackColorActive="@color/ios_blue"
+            app:trackColorInactive="@color/ios_bg_tertiary"/>
+
+        <TextView
+            android:id="@+id/tvDialogDenoise"
+            style="@style/IOS_Body"
+            android:layout_width="40dp"
+            android:layout_height="wrap_content"
+            android:fontFamily="monospace"
+            android:gravity="end"
+            android:text="0"
+            android:textColor="@color/ios_blue"
+            android:textStyle="bold"/>
+    </LinearLayout>
+
+    <!-- Use GPU -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/sp_5"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            style="@style/IOS_Body"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Use GPU"
+            android:textColor="@color/ios_label"/>
+
+        <com.google.android.material.materialswitch.MaterialSwitch
+            android:id="@+id/swDialogGpu"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+    </LinearLayout>
+
+    <!-- RAM indicator -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/sp_5"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            style="@style/IOS_Body"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="RAM:"
+            android:textColor="@color/ios_label"/>
+
+        <TextView
+            android:id="@+id/tvDialogRam"
+            style="@style/IOS_Body"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="monospace"
+            android:text="— MB / — MB"
+            android:textColor="@color/ios_blue"
+            android:textStyle="bold"/>
+
+        <TextView
+            style="@style/IOS_Caption2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/sp_2"
+            android:text="Est / Avail"/>
+    </LinearLayout>
+
+    <com.google.android.material.progressindicator.LinearProgressIndicator
+        android:id="@+id/progressDialogRam"
+        android:layout_width="match_parent"
+        android:layout_height="4dp"
+        android:layout_marginTop="@dimen/sp_2"
+        android:progress="0"
+        app:indicatorColor="@color/ios_blue"
+        app:trackColor="@color/ios_bg_tertiary"
+        app:trackCornerRadius="2dp"/>
+
+    <!-- Process button -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnDialogProcess"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end"
+        android:layout_marginTop="@dimen/sp_5"
+        android:text="PROCESS"
+        android:textAllCaps="true"
+        android:textColor="@color/ios_label"
+        app:backgroundTint="@color/ios_blue"
+        app:cornerRadius="@dimen/r_sm"
+        app:elevation="0dp"/>
+</LinearLayout>
