@@ -107,4 +107,17 @@ object NotificationHelper {
     fun cancelDownload(context: Context) {
         try { NotificationManagerCompat.from(context).cancel(NOTIF_ID_DOWNLOAD) } catch (_: Throwable) {}
     }
+
+    /**
+     * Update progress dari foreground service (dipanggil dari service).
+     */
+    fun updateProgressFromService(context: Context, percent: Int, text: String) {
+        val notif = base(context, CHANNEL_UPSCALE,
+            context.getString(R.string.notif_upscale_title), text)
+            .setProgress(100, percent.coerceIn(0, 100), false)
+            .build()
+        try {
+            NotificationManagerCompat.from(context).notify(NOTIF_ID_UPSCALE, notif)
+        } catch (_: Throwable) {}
+    }
 }

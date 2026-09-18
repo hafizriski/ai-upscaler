@@ -11,12 +11,18 @@ android {
         applicationId = "com.arthexdev.exups"
         minSdk = 28
         targetSdk = 34
-        versionCode = 12
+        versionCode = 41
         versionName = "1.0.0"
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
     }
 
-    androidResources { noCompress += listOf("tflite", "bin") }
+    androidResources {
+        noCompress += listOf("tflite", "bin")
+    }
+    defaultConfig {
+        resourceConfigurations += listOf("in", "en")
+    }
+    buildFeatures { buildConfig = true }
     buildFeatures { viewBinding = true }
 
     packaging {
@@ -47,4 +53,11 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     implementation("org.tensorflow:tensorflow-lite:2.14.0")
     implementation("org.tensorflow:tensorflow-lite-gpu:2.14.0")
+
+    // Unit test
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
+    testImplementation("org.mockito:mockito-core:5.4.0")
+    androidTestImplementation("androidx.test.ext:junit:1.1.5")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
 }

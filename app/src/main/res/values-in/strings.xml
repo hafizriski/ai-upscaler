@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Ex Upscaler</string>
+
+    <string name="nav_home">Beranda</string>
+    <string name="nav_gallery">Galeri</string>
+    <string name="nav_profile">Profil</string>
+
+    <string name="action_add">Tambah</string>
+    <string name="action_upscale">Upscale</string>
+    <string name="action_save">Simpan</string>
+    <string name="action_share">Bagikan</string>
+    <string name="action_cancel">Batalkan</string>
+    <string name="action_delete">Hapus</string>
+    <string name="action_save_profile">Simpan Profil</string>
+    <string name="action_batch">Batch</string>
+
+    <string name="status_idle">Siap</string>
+    <string name="status_cancelled">Dibatalkan</string>
+
+    <string name="label_model">Model AI</string>
+    <string name="label_cpu">CPU</string>
+    <string name="label_ram">RAM</string>
+    <string name="label_gpu">GPU</string>
+    <string name="label_threads">CPU Threads</string>
+    <string name="label_detail">Detail proses</string>
+    <string name="label_username">Username</string>
+    <string name="hint_username">Masukkan username</string>
+
+    <string name="profile_saved">Profil tersimpan</string>
+    <string name="gallery_title">Hasil Upscale</string>
+    <string name="gallery_empty">Belum ada hasil. Upscale gambar dulu!</string>
+
+    <string name="hint_pick_image">Tap Tambah untuk pilih gambar</string>
+    <string name="hint_no_result">Hasil akan muncul di sini</string>
+    <string name="hint_pick_first">Pilih gambar dulu untuk mulai</string>
+
+    <string name="saved_success">Tersimpan di Pictures/ExUpscaler</string>
+    <string name="deleted_success">Item dihapus</string>
+    <string name="delete_confirm">Hapus item ini?</string>
+
+    <string name="cd_image_preview">Pratinjau gambar</string>
+    <string name="cd_profile_photo">Foto profil</string>
+
+    <string name="developer_info">Developed by arthexdev</string>
+
+    <string name="slider_hint">Geser untuk banding · Cubit untuk zoom</string>
+    <string name="batch_pick">Pilih beberapa gambar</string>
+    <string name="batch_progress">Memproses %1$d / %2$d</string>
+    <string name="batch_done">Batch selesai: %1$d sukses, %2$d gagal</string>
+
+    <!-- Notification -->
+    <string name="notif_channel_name">Proses Upscale</string>
+    <string name="notif_channel_desc">Notifikasi progress upscale</string>
+    <string name="notif_download_channel_name">Download Model</string>
+    <string name="notif_download_channel_desc">Notifikasi download model AI</string>
+    <string name="notif_upscale_title">Upscaling Gambar</string>
+    <string name="notif_upscale_preparing">Menyiapkan…</string>
+    <string name="notif_upscale_processing">Memproses %1$d%%</string>
+    <string name="notif_upscale_done">Selesai · %1$dx%2$d</string>
+    <string name="notif_upscale_failed">Gagal memproses</string>
+    <string name="notif_upscale_cancel">Batalkan</string>
+    <string name="notif_download_title">Mengunduh Model</string>
+    <string name="notif_download_progress">%1$d%% · %2$d MB / %3$d MB</string>
+
+    <!-- Settings -->
+    <string name="settings_theme">Tema</string>
+    <string name="theme_system">Ikut Sistem</string>
+    <string name="theme_dark">Gelap</string>
+    <string name="theme_light">Terang</string>
+</resources>

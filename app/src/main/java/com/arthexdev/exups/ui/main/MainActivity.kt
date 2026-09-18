@@ -25,11 +25,15 @@ import com.arthexdev.exups.databinding.ActivityMainBinding
 import com.arthexdev.exups.ml.engine.Backend
 import com.arthexdev.exups.ml.engine.ModelRegistry
 import com.arthexdev.exups.ml.engine.ModelSpec
+import com.arthexdev.exups.ui.batch.BatchActivity
 import com.arthexdev.exups.ui.gallery.GalleryAdapter
+import com.arthexdev.exups.ui.gallery.GalleryViewerActivity
+import com.arthexdev.exups.ui.widget.BeforeAfterSlider
 import com.arthexdev.exups.util.ImageSaver
 import com.arthexdev.exups.util.NotificationHelper
 import com.arthexdev.exups.util.PermissionHelper
 import com.arthexdev.exups.util.SystemMonitor
+import com.arthexdev.exups.util.ThemePreferences
 import com.google.android.material.chip.Chip
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.Dispatchers
@@ -95,7 +99,27 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupGallery() {
-        galleryAdapter = GalleryAdapter { toast("Tap: ${it.name}") }
+        galleryAdapter = GalleryAdapter(
+            onItemClick = { item ->
+                val i = Intent(this, GalleryViewerActivity::class.java).apply {
+                    putExtra(GalleryViewerActivity.EXTRA_PATH, item.file.absolutePath)
+                }
+                startActivity(i)
+            },
+            onItemLongClick = { item ->
+                androidx.appcompat.app.AlertDialog.Builder(this)
+                    .setTitle(item.name)
+                    .setMessage(getString(R.string.delete_confirm))
+                    .setPositiveButton(getString(R.string.action_delete)) { _, _ ->
+                        if (item.file.delete()) {
+                            refreshGallery()
+                            toast(getString(R.string.deleted_success))
+                        }
+                    }
+                    .setNegativeButton(getString(R.string.action_cancel), null)
+                    .show()
+            }
+        )
         binding.rvGallery.layoutManager = GridLayoutManager(this, 2)
         binding.rvGallery.adapter = galleryAdapter
         refreshGallery()
@@ -151,6 +175,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupListeners() {
+        binding.fabAdd.setOnLongClickListener {
+            it.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+            startActivity(Intent(this, BatchActivity::class.java))
+            true
+        }
         binding.fabAdd.setOnClickListener {
             it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
             if (!PermissionHelper.hasStoragePermission(this)) {
@@ -264,6 +293,18 @@ class MainActivity : AppCompatActivity() {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 vm.state.collect { s ->
                     binding.imagePreview.setImageBitmap(s.result ?: s.source)
+
+                    // Before/After slider
+                    if (s.source != null && s.result != null) {
+                        val slider = binding.beforeAfterInclude
+                            .findViewById<BeforeAfterSlider>(R.id.beforeAfterSlider)
+                        slider?.setBitmaps(s.source, s.result)
+                        binding.beforeAfterInclude.visibility = View.VISIBLE
+                        binding.imagePreview.visibility = View.GONE
+                    } else {
+                        binding.beforeAfterInclude.visibility = View.GONE
+                        binding.imagePreview.visibility = View.VISIBLE
+                    }
                     binding.previewPlaceholder.visibility =
                         if (s.result == null && s.source == null) View.VISIBLE else View.GONE
 
@@ -393,6 +434,8 @@ class MainActivity : AppCompatActivity() {
                     val intent = Intent(Intent.ACTION_SEND).apply {
                         type = "image/png"
                         putExtra(Intent.EXTRA_STREAM, uri)
+                        putExtra(Intent.EXTRA_TEXT, "Upscaled with Ex Upscaler")
+                        putExtra(Intent.EXTRA_TITLE, "Ex Upscaler")
                         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                     }
                     startActivity(Intent.createChooser(intent, "Bagikan"))

@@ -14,6 +14,18 @@ class UpscaleNotificationService : Service() {
     companion object {
         const val ACTION_START = "com.arthexdev.exups.START_UPSCALE"
         const val ACTION_STOP = "com.arthexdev.exups.STOP_UPSCALE"
+        const val ACTION_UPDATE = "com.arthexdev.exups.UPDATE_UPSCALE"
+        const val EXTRA_PERCENT = "extra_percent"
+        const val EXTRA_TEXT = "extra_text"
+
+        fun update(context: Context, percent: Int, text: String) {
+            val i = Intent(context, UpscaleNotificationService::class.java).apply {
+                action = ACTION_UPDATE
+                putExtra(EXTRA_PERCENT, percent)
+                putExtra(EXTRA_TEXT, text)
+            }
+            try { context.startService(i) } catch (_: Throwable) {}
+        }
 
         fun start(context: Context) {
             val i = Intent(context, UpscaleNotificationService::class.java).apply {
@@ -46,6 +58,11 @@ class UpscaleNotificationService : Service() {
                     .setColor(getColor(R.color.ios_blue))
                     .build()
                 startForeground(NotificationHelper.NOTIF_ID_UPSCALE, notif)
+            }
+            ACTION_UPDATE -> {
+                val pct = intent.getIntExtra(EXTRA_PERCENT, 0)
+                val txt = intent.getStringExtra(EXTRA_TEXT) ?: getString(R.string.notif_upscale_preparing)
+                NotificationHelper.updateProgressFromService(this, pct, txt)
             }
             ACTION_STOP -> {
                 stopForeground(STOP_FOREGROUND_REMOVE)

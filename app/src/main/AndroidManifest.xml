@@ -34,6 +34,18 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".ui.gallery.GalleryViewerActivity"
+            android:exported="false"
+            android:theme="@style/Theme.AIUpscaler"
+            android:configChanges="orientation|screenSize|keyboardHidden|uiMode"/>
+
+        <activity
+            android:name=".ui.batch.BatchActivity"
+            android:exported="false"
+            android:theme="@style/Theme.AIUpscaler"
+            android:configChanges="orientation|screenSize|keyboardHidden|uiMode"/>
+
         <service
             android:name=".service.UpscaleNotificationService"
             android:exported="false"

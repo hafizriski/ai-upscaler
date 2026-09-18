@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ios_bg">#000000</color>
+    <color name="ios_bg_elevated">#1C1C1E</color>
+    <color name="ios_bg_secondary">#2C2C2E</color>
+    <color name="ios_bg_tertiary">#3A3A3C</color>
+    <color name="ios_separator">#38383A</color>
+    <color name="ios_separator_opaque">#545458</color>
+    <color name="ios_label">#FFFFFF</color>
+    <color name="ios_label_secondary">#EBEBF599</color>
+    <color name="ios_label_tertiary">#EBEBF54D</color>
+    <color name="ios_fill_tertiary">#7676803D</color>
+</resources>

@@ -19,7 +19,8 @@ import java.util.Locale
 
 class GalleryAdapter(
     private var items: List<GalleryRepository.GalleryItem> = emptyList(),
-    private val onItemClick: (GalleryRepository.GalleryItem) -> Unit = {}
+    private val onItemClick: (GalleryRepository.GalleryItem) -> Unit = {},
+    private val onItemLongClick: (GalleryRepository.GalleryItem) -> Unit = {}
 ) : RecyclerView.Adapter<GalleryAdapter.VH>() {
 
     private val dateFormat = SimpleDateFormat("dd/MM HH:mm", Locale.getDefault())
@@ -50,6 +51,7 @@ class GalleryAdapter(
             }
         }
         holder.itemView.setOnClickListener { onItemClick(item) }
+        holder.itemView.setOnLongClickListener { onItemLongClick(item); true }
     }
 
     override fun getItemCount() = items.size

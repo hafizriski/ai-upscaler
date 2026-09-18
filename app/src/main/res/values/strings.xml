@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Ex Upscaler</string>
 
@@ -7,47 +8,64 @@
 
     <string name="action_add">Add</string>
     <string name="action_upscale">Upscale</string>
-    <string name="action_save">Simpan</string>
-    <string name="action_share">Bagikan</string>
-    <string name="action_cancel">Batalkan</string>
-    <string name="action_save_profile">Simpan Profil</string>
+    <string name="action_save">Save</string>
+    <string name="action_share">Share</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_save_profile">Save Profile</string>
+    <string name="action_batch">Batch</string>
 
-    <string name="status_idle">Siap</string>
+    <string name="status_idle">Ready</string>
+    <string name="status_cancelled">Cancelled</string>
 
-    <string name="label_model">Model AI</string>
+    <string name="label_model">AI Model</string>
     <string name="label_cpu">CPU</string>
     <string name="label_ram">RAM</string>
     <string name="label_gpu">GPU</string>
     <string name="label_threads">CPU Threads</string>
-    <string name="label_detail">Detail proses</string>
+    <string name="label_detail">Process details</string>
     <string name="label_username">Username</string>
-    <string name="hint_username">Masukkan username</string>
+    <string name="hint_username">Enter username</string>
 
-    <string name="profile_saved">Profil tersimpan</string>
-    <string name="gallery_title">Hasil Upscale</string>
-    <string name="gallery_empty">Belum ada hasil. Upscale gambar dulu!</string>
+    <string name="profile_saved">Profile saved</string>
+    <string name="gallery_title">Upscale Results</string>
+    <string name="gallery_empty">No results yet. Upscale an image first!</string>
 
-    <string name="hint_pick_image">Tap Add untuk pilih gambar</string>
-    <string name="hint_no_result">Hasil akan muncul di sini</string>
-    <string name="hint_pick_first">Pilih gambar dulu untuk mulai upscale</string>
+    <string name="hint_pick_image">Tap Add to pick an image</string>
+    <string name="hint_no_result">Result will appear here</string>
+    <string name="hint_pick_first">Pick an image first to start</string>
 
-    <string name="saved_success">Tersimpan di Pictures/ExUpscaler</string>
+    <string name="saved_success">Saved to Pictures/ExUpscaler</string>
+    <string name="deleted_success">Item deleted</string>
+    <string name="delete_confirm">Delete this item?</string>
 
-    <string name="cd_image_preview">Pratinjau gambar</string>
-    <string name="cd_profile_photo">Foto profil</string>
+    <string name="cd_image_preview">Image preview</string>
+    <string name="cd_profile_photo">Profile photo</string>
 
     <string name="developer_info">Developed by arthexdev</string>
 
+    <string name="slider_hint">Drag to compare · Pinch to zoom</string>
+    <string name="batch_pick">Pick multiple images</string>
+    <string name="batch_progress">Processing %1$d / %2$d</string>
+    <string name="batch_done">Batch complete: %1$d success, %2$d failed</string>
+
     <!-- Notification -->
-    <string name="notif_channel_name">Proses Upscale</string>
-    <string name="notif_channel_desc">Notifikasi progress upscale</string>
-    <string name="notif_download_channel_name">Download Model</string>
-    <string name="notif_download_channel_desc">Notifikasi download model AI</string>
-    <string name="notif_upscale_title">Upscaling Gambar</string>
-    <string name="notif_upscale_preparing">Menyiapkan…</string>
-    <string name="notif_upscale_processing">Memproses %1$d%%</string>
-    <string name="notif_upscale_done">Selesai · %1$dx%2$d</string>
-    <string name="notif_upscale_failed">Gagal memproses</string>
-    <string name="notif_download_title">Mengunduh Model</string>
+    <string name="notif_channel_name">Upscale Process</string>
+    <string name="notif_channel_desc">Upscale progress notification</string>
+    <string name="notif_download_channel_name">Model Download</string>
+    <string name="notif_download_channel_desc">AI model download notification</string>
+    <string name="notif_upscale_title">Upscaling Image</string>
+    <string name="notif_upscale_preparing">Preparing…</string>
+    <string name="notif_upscale_processing">Processing %1$d%%</string>
+    <string name="notif_upscale_done">Done · %1$dx%2$d</string>
+    <string name="notif_upscale_failed">Processing failed</string>
+    <string name="notif_upscale_cancel">Cancel</string>
+    <string name="notif_download_title">Downloading Model</string>
     <string name="notif_download_progress">%1$d%% · %2$d MB / %3$d MB</string>
+
+    <!-- Settings -->
+    <string name="settings_theme">Theme</string>
+    <string name="theme_system">Follow System</string>
+    <string name="theme_dark">Dark</string>
+    <string name="theme_light">Light</string>
 </resources>

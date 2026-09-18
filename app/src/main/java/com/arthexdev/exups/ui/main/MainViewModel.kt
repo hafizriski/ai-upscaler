@@ -289,4 +289,87 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         NotificationHelper.showUpscaleDone(getApplication(), r.bitmap.width, r.bitmap.height)
         try { UpscaleNotificationService.stop(getApplication()) } catch (_: Throwable) {}
     }
+
+    /**
+     * Batch upscale — proses list bitmap sequential.
+     * Setiap selesai, auto-save ke gallery.
+     */
+    fun batchUpscale(bitmaps: List<Bitmap>) {
+        if (bitmaps.isEmpty()) return
+        if (_state.value.processing || _state.value.downloading) return
+
+        viewModelScope.launch {
+            val total = bitmaps.size
+            var success = 0
+            var failed = 0
+
+            _state.update {
+                it.copy(
+                    processing = true, canCancel = true,
+                    statusText = "Batch: 0/$total", statusKind = StatusKind.RUNNING,
+                    progressPercent = 0,
+                    progressText = "Batch dimulai"
+                )
+            }
+
+            for ((idx, bmp) in bitmaps.withIndex()) {
+                try {
+                    _state.update {
+                        it.copy(
+                            source = bmp,
+                            statusText = "Batch: ${idx + 1}/$total",
+                            progressText = "Memproses ${idx + 1}/$total"
+                        )
+                    }
+
+                    val request = UpscaleRequest(
+                        sourceBitmap = bmp,
+                        backend = _state.value.backend,
+                        threadCount = _state.value.threadCount,
+                        modelId = _state.value.selectedModelId
+                    )
+
+                    val result = useCase(request) { event ->
+                        if (event is ProgressEvent.TileProgress) {
+                            val pct = if (event.total > 0)
+                                ((event.current.toFloat() / event.total) * 100f).toInt()
+                            else 0
+                            _state.update { st ->
+                                st.copy(
+                                    progressPercent = pct,
+                                    progressText = "Batch ${idx + 1}/$total · tile ${event.current}/${event.total}"
+                                )
+                            }
+                        }
+                    }
+
+                    when (result) {
+                        is AppResult.Success -> {
+                            success++
+                            // Save to gallery
+                            try {
+                                val galleryRepo = com.arthexdev.exups.data.repository.GalleryRepository(getApplication())
+                                galleryRepo.saveResult(result.data.bitmap)
+                            } catch (_: Throwable) {}
+                        }
+                        is AppResult.Failure -> failed++
+                    }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (_: Throwable) {
+                    failed++
+                }
+            }
+
+            _state.update {
+                it.copy(
+                    processing = false, canCancel = false,
+                    statusText = "Batch selesai",
+                    statusKind = StatusKind.DONE,
+                    progressPercent = 100,
+                    progressText = "Sukses: $success · Gagal: $failed"
+                )
+            }
+        }
+    }
 }
